@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Sign In — VoteApp{% endblock %}
+
+{% block extra_head %}
+<style>
+  body { background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 50%, #EFF6FF 100%); }
+  .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .auth-card { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(37,99,235,.12); padding: 48px 40px; width: 100%; max-width: 440px; }
+  .auth-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 32px; }
+  .auth-logo-icon { width: 48px; height: 48px; background: #2563EB; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+  .auth-logo-icon svg { width: 26px; height: 26px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .auth-logo-text { font-size: 1.5rem; font-weight: 800; color: #111827; }
+  .auth-heading { font-size: 1.4rem; font-weight: 700; color: #111827; text-align: center; margin-bottom: 6px; }
+  .auth-subheading { text-align: center; color: #6B7280; font-size: .9rem; margin-bottom: 32px; }
+  .sso-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px; border: 1px solid #E5E7EB; border-radius: 8px; background: white; color: #374151; font-size: .875rem; font-weight: 500; cursor: pointer; transition: all .15s; text-decoration: none; margin-bottom: 20px; }
+  .sso-btn:hover { background: #F9FAFB; border-color: #D1D5DB; }
+  .or-divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: #9CA3AF; font-size: .8rem; }
+  .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: #E5E7EB; }
+  .security-footer { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 24px; color: #9CA3AF; font-size: .78rem; }
+  .register-link { text-align: center; margin-top: 20px; font-size: .875rem; color: #6B7280; }
+  .register-link a { color: #2563EB; font-weight: 500; text-decoration: none; }
+  .register-link a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <span class="auth-logo-text">VoteApp</span>
+    </div>
+
+    <h1 class="auth-heading">Welcome back</h1>
+    <p class="auth-subheading">Sign in with your email/username and unique code</p>
+
+    {% if messages %}
+    <div class="messages-container">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <a href="#" class="sso-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Sign in with SSO
+    </a>
+
+    <div class="or-divider">or continue with credentials</div>
+
+    <form method="post" action="{% url 'accounts:login' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="id_username">Username or Index Number</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          {% for error in form.username.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+        {% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="id_unique_code">Unique Code</label>
+        {{ form.unique_code }}
+        {% if form.unique_code.errors %}
+          {% for error in form.unique_code.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+        {% endif %}
+        {% if form.non_field_errors %}
+          {% for error in form.non_field_errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+        {% endif %}
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:20px;">
+        <a href="#" style="font-size:.875rem; color:#2563EB; text-decoration:none;">Contact admin for code</a>
+      </div>
+      <button type="submit" class="btn btn-primary w-full btn-lg">Sign In</button>
+    </form>
+
+    <div class="register-link">
+      Don't have an account? <a href="{% url 'accounts:register' %}">Create one</a>
+    </div>
+
+    <div class="security-footer">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Secured with 256-bit SSL encryption
+    </div>
+  </div>
+</div>
+{% endblock %}

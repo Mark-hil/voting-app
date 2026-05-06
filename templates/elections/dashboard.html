@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — VoteApp{% endblock %}
+
+{% block body %}
+<div class="page-wrapper">
+  <div class="content-only">
+    {% if messages %}
+    <div class="messages-container">
+      {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <h1 class="page-title">Hello, {{ request.user.first_name|default:request.user.username }} 👋</h1>
+        <p class="page-subtitle">Here are your available elections and voting history.</p>
+      </div>
+    </div>
+
+    <!-- Active Elections -->
+    <section class="mb-6">
+      <h2 class="text-lg font-semibold mb-4" style="color:var(--gray-800);">Active Elections</h2>
+      {% if active_elections %}
+        <div class="grid-3">
+          {% for election in active_elections %}
+          <div class="card" style="transition:box-shadow .2s;" onmouseenter="this.style.boxShadow='0 8px 24px rgba(37,99,235,.12)'" onmouseleave="this.style.boxShadow=''">
+            <div class="card-body">
+              <div class="flex justify-between items-center mb-2">
+                <span class="badge badge-green">● Active</span>
+                {% if election.id in voted_election_ids %}<span class="badge badge-blue">Voted</span>{% endif %}
+              </div>
+              <h3 class="font-semibold text-lg" style="color:var(--gray-900);margin-bottom:4px;">{{ election.title }}</h3>
+              <p class="text-sm text-gray mb-2">Position: <strong>{{ election.position }}</strong></p>
+              {% if election.description %}
+              <p class="text-sm text-gray mb-3" style="line-height:1.5;">{{ election.description|truncatechars:80 }}</p>
+              {% endif %}
+              <div class="text-xs text-gray mb-4">
+                Ends: {{ election.end_date|date:"M d, Y H:i" }} UTC
+              </div>
+              {% if election.id not in voted_election_ids %}
+              <a href="{% url 'elections:ballot' election.id %}" class="btn btn-primary w-full">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                Vote Now
+              </a>
+              {% else %}
+              <button class="btn btn-secondary w-full" disabled>✓ Already Voted</button>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="card">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <p>No active elections right now. Check back later!</p>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- Upcoming Elections -->
+    {% if upcoming_elections %}
+    <section class="mb-6">
+      <h2 class="text-lg font-semibold mb-4" style="color:var(--gray-800);">Upcoming Elections</h2>
+      <div class="grid-3">
+        {% for election in upcoming_elections %}
+        <div class="card">
+          <div class="card-body">
+            <span class="badge badge-yellow">Upcoming</span>
+            <h3 class="font-semibold mt-2 mb-1">{{ election.title }}</h3>
+            <p class="text-sm text-gray">{{ election.position }}</p>
+            <p class="text-xs text-gray mt-2">Starts: {{ election.start_date|date:"M d, Y H:i" }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Voting History -->
+    <section>
+      <h2 class="text-lg font-semibold mb-4" style="color:var(--gray-800);">Voting History</h2>
+      {% if user_votes %}
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Election</th>
+                <th>Position</th>
+                <th>Candidate</th>
+                <th>Reference ID</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for vote in user_votes %}
+              <tr>
+                <td class="font-medium">{{ vote.election.title }}</td>
+                <td class="text-gray">{{ vote.election.position }}</td>
+                <td>{{ vote.candidate.name }}</td>
+                <td><code style="background:var(--gray-100);padding:2px 6px;border-radius:4px;font-size:.8rem;">{{ vote.reference_id }}</code></td>
+                <td class="text-gray text-sm">{{ vote.cast_at|date:"M d, Y" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/></svg>
+          <p>You haven't voted in any elections yet.</p>
+        </div>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

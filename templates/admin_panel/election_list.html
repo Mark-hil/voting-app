@@ -1,0 +1,73 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block title %}Elections — VoteApp Admin{% endblock %}
+
+{% block admin_content %}
+<div class="page-header flex justify-between items-center">
+  <div>
+    <h1 class="page-title">Elections</h1>
+    <p class="page-subtitle">Manage all elections and their status.</p>
+  </div>
+  <a href="{% url 'admin_panel:election_create' %}" class="btn btn-primary">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New Election
+  </a>
+</div>
+
+<div class="card">
+  {% if elections %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Election</th>
+          <th>Status</th>
+          <th>Type</th>
+          <th>Period</th>
+          <th>Votes</th>
+          <th>Participation</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for election in elections %}
+        <tr>
+          <td>
+            <div class="font-medium" style="color:var(--gray-900);">{{ election.title }}</div>
+            <div class="text-xs text-gray">{{ election.position }}</div>
+          </td>
+          <td>
+            {% if election.status == 'active' %}<span class="badge badge-green">Active</span>
+            {% elif election.status == 'completed' %}<span class="badge badge-gray">Completed</span>
+            {% elif election.status == 'draft' %}<span class="badge badge-yellow">Draft</span>
+            {% else %}<span class="badge badge-red">Cancelled</span>{% endif %}
+          </td>
+          <td class="text-sm text-gray">{{ election.get_voting_type_display }}</td>
+          <td class="text-xs text-gray">
+            {{ election.start_date|date:"M d" }} – {{ election.end_date|date:"M d, Y" }}
+          </td>
+          <td class="font-semibold">{{ election.vote_count }}</td>
+          <td>
+            <div class="text-sm">{{ election.participation_rate }}%</div>
+            <div class="progress-bar mt-1" style="width:80px;">
+              <div class="progress-fill" style="width:{{ election.participation_rate }}%;"></div>
+            </div>
+          </td>
+          <td>
+            <div class="flex gap-2">
+              <a href="{% url 'admin_panel:election_manage' election.id %}" class="btn btn-ghost btn-sm">Manage</a>
+              <a href="{% url 'admin_panel:election_results' election.id %}" class="btn btn-ghost btn-sm text-blue">Results</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+    <p>No elections yet. <a href="{% url 'admin_panel:election_create' %}" style="color:var(--blue);">Create your first election</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
