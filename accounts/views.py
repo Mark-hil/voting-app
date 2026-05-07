@@ -6,9 +6,6 @@ from .forms import LoginForm, RegisterForm
 from .models import CustomUser
 
 
-from admin_panel.security import login_rate_limit
-
-@login_rate_limit
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('elections:dashboard')
