@@ -101,8 +101,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Whitenoise for static files in production
 if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    # Serve media files through whitenoise in production
-    WHITENOISE_ROOT = BASE_DIR / 'media'
+    # In production, media files need to be served separately
+    # Render will serve media files from the media directory
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'
