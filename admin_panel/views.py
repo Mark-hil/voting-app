@@ -164,21 +164,27 @@ def extend_voting_time(request, election_id):
     election = get_object_or_404(Election, id=election_id)
     
     if request.method == 'POST':
+        # Debug: Print POST data
+        print(f"DEBUG: POST data = {request.POST}")
+        print(f"DEBUG: election_id = {election_id}")
+        
         try:
             # Get extension duration from form with validation
             hours_str = request.POST.get('hours', '0')
             days_str = request.POST.get('days', '0')
             
+            print(f"DEBUG: hours_str = '{hours_str}', days_str = '{days_str}'")
+            
             # Convert to integers with error handling
             hours = 0
             days = 0
             
-            if hours_str:
+            if hours_str and hours_str.strip():
                 hours = int(hours_str)
                 if hours < 0 or hours > 23:
                     raise ValueError("Hours must be between 0 and 23")
             
-            if days_str:
+            if days_str and days_str.strip():
                 days = int(days_str)
                 if days < 0 or days > 30:
                     raise ValueError("Days must be between 0 and 30")
@@ -198,7 +204,12 @@ def extend_voting_time(request, election_id):
             return redirect('admin_panel:election_manage', election_id=election.id)
             
         except (ValueError, TypeError) as e:
+            print(f"DEBUG: Error occurred: {e}")
             messages.error(request, f'Invalid input: {str(e)}. Please enter valid numbers.')
+            return render(request, 'admin_panel/extend_voting.html', {'election': election})
+        except Exception as e:
+            print(f"DEBUG: Unexpected error: {e}")
+            messages.error(request, f'An error occurred: {str(e)}. Please try again.')
             return render(request, 'admin_panel/extend_voting.html', {'election': election})
     
     return render(request, 'admin_panel/extend_voting.html', {'election': election})
