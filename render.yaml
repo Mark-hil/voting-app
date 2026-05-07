@@ -4,8 +4,9 @@ services:
     name: voteapp
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn voteapp.wsgi:application
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn voteapp.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /accounts/login/
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -16,7 +17,7 @@ services:
       - key: DEBUG
         value: false
       - key: ALLOWED_HOSTS
-        value: voteapp.onrender.com
+        value: voting-app-wvk6.onrender.com,localhost,127.0.0.1
 
   # PostgreSQL Database
   - type: pserv
