@@ -9,6 +9,7 @@ urlpatterns = [
     path('elections/', views.election_list, name='election_list'),
     path('elections/create/', views.election_create, name='election_create'),
     path('elections/<uuid:election_id>/manage/', views.election_manage, name='election_manage'),
+    path('elections/<uuid:election_id>/extend/', views.extend_voting_time, name='extend_voting_time'),
     path('elections/<uuid:election_id>/results/', views.election_results, name='election_results'),
     path('voters/', views.voter_list, name='voter_list'),
     path('voters/invite/', views.voter_invite, name='voter_invite'),

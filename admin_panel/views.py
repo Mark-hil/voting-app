@@ -160,6 +160,52 @@ def election_manage(request, election_id):
 
 @login_required
 @admin_required
+def extend_voting_time(request, election_id):
+    election = get_object_or_404(Election, id=election_id)
+    
+    if request.method == 'POST':
+        try:
+            # Get extension duration from form with validation
+            hours_str = request.POST.get('hours', '0')
+            days_str = request.POST.get('days', '0')
+            
+            # Convert to integers with error handling
+            hours = 0
+            days = 0
+            
+            if hours_str:
+                hours = int(hours_str)
+                if hours < 0 or hours > 23:
+                    raise ValueError("Hours must be between 0 and 23")
+            
+            if days_str:
+                days = int(days_str)
+                if days < 0 or days > 30:
+                    raise ValueError("Days must be between 0 and 30")
+            
+            # Check if any extension is requested
+            if hours == 0 and days == 0:
+                messages.error(request, 'Please specify at least some days or hours to extend.')
+                return render(request, 'admin_panel/extend_voting.html', {'election': election})
+            
+            # Calculate new end date
+            from datetime import timedelta
+            extension = timedelta(hours=hours, days=days)
+            election.end_date = election.end_date + extension
+            election.save()
+            
+            messages.success(request, f'Voting time extended by {days} days and {hours} hours.')
+            return redirect('admin_panel:election_manage', election_id=election.id)
+            
+        except (ValueError, TypeError) as e:
+            messages.error(request, f'Invalid input: {str(e)}. Please enter valid numbers.')
+            return render(request, 'admin_panel/extend_voting.html', {'election': election})
+    
+    return render(request, 'admin_panel/extend_voting.html', {'election': election})
+
+
+@login_required
+@admin_required
 def election_results(request, election_id):
     election = get_object_or_404(Election, id=election_id)
     candidates = election.candidates.all()
