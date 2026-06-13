@@ -18,6 +18,15 @@ services:
         value: false
       - key: ALLOWED_HOSTS
         value: voting-app-wvk6.onrender.com,localhost,127.0.0.1
+      # AWS S3 Configuration for Media Files
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        value: us-east-1
 
   # PostgreSQL Database
   - type: pserv
