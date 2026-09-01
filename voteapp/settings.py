@@ -57,18 +57,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'voteapp.wsgi.application'
 
-# Check if we're in production (Render sets RENDER_EXTERNAL_URL)
-IN_PRODUCTION = os.environ.get('RENDER_EXTERNAL_URL') is not None
+# Database configuration
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if IN_PRODUCTION:
-    # Production: Use PostgreSQL from DATABASE_URL
-    if os.environ.get('DATABASE_URL'):
-        import dj_database_url
-        DATABASES = {
-            'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
-        }
-    else:
-        raise ImproperlyConfigured("DATABASE_URL not set in production")
+if DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 else:
     # Development: Use SQLite
     DATABASES = {

@@ -4,8 +4,9 @@ services:
     name: voteapp
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput --clear && python manage.py migrate && python manage.py shell -c "import os; os.makedirs('media', exist_ok=True); os.makedirs('media/candidates', exist_ok=True)"
-    startCommand: gunicorn voteapp.wsgi:application --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput --clear
+    preDeployCommand: python manage.py migrate
+    startCommand: python manage.py migrate && gunicorn voteapp.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /accounts/login/
     envVars:
       - key: DATABASE_URL
