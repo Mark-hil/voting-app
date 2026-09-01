@@ -3,18 +3,93 @@
 
 {% block extra_head %}
 <style>
-  body { background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 50%, #EFF6FF 100%); }
-  .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-  .auth-card { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(37,99,235,.12); padding: 48px 40px; width: 100%; max-width: 460px; }
-  .auth-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 28px; }
-  .auth-logo-icon { width: 44px; height: 44px; background: #2563EB; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-  .auth-logo-icon svg { width: 24px; height: 24px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .auth-logo-text { font-size: 1.4rem; font-weight: 800; color: #111827; }
-  .auth-heading { font-size: 1.3rem; font-weight: 700; color: #111827; text-align: center; margin-bottom: 6px; }
-  .auth-subheading { text-align: center; color: #6B7280; font-size: .875rem; margin-bottom: 28px; }
-  .name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .login-link { text-align: center; margin-top: 20px; font-size: .875rem; color: #6B7280; }
-  .login-link a { color: #2563EB; font-weight: 500; text-decoration: none; }
+  body {
+    background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.08) 0%, transparent 40%),
+                var(--slate-50);
+  }
+  .auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+  .auth-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.8);
+    padding: 44px 36px;
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: var(--primary-gradient);
+  }
+  .auth-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .auth-logo-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--primary-gradient);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px rgba(79, 70, 229, 0.28);
+    color: white;
+  }
+  .auth-logo-text {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--slate-900) 0%, var(--primary-700) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .auth-heading {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--slate-900);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .auth-subheading {
+    text-align: center;
+    color: var(--slate-500);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+  }
+  .name-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .login-link {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.875rem;
+    color: var(--slate-500);
+  }
+  .login-link a {
+    color: var(--primary-600);
+    font-weight: 600;
+  }
 </style>
 {% endblock %}
 
@@ -23,21 +98,16 @@
   <div class="auth-card">
     <div class="auth-logo">
       <div class="auth-logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"></path>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
       </div>
       <span class="auth-logo-text">VoteApp</span>
     </div>
 
-    <h1 class="auth-heading">Create your account</h1>
-    <p class="auth-subheading">Join VoteApp to participate in secure elections</p>
-
-    {% if messages %}
-    <div class="messages-container">
-      {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-      {% endfor %}
-    </div>
-    {% endif %}
+    <h1 class="auth-heading">Create an Account</h1>
+    <p class="auth-subheading">Join to vote in upcoming verified elections</p>
 
     <form method="post">
       {% csrf_token %}
@@ -53,26 +123,32 @@
           {% for error in form.last_name.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
         </div>
       </div>
+
       <div class="form-group">
         <label class="form-label">Email Address</label>
         {{ form.email }}
         {% for error in form.email.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
       </div>
+
       <div class="form-group">
         <label class="form-label">Password</label>
         {{ form.password1 }}
         {% for error in form.password1.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
       </div>
+
       <div class="form-group">
         <label class="form-label">Confirm Password</label>
         {{ form.password2 }}
         {% for error in form.password2.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
       </div>
-      <button type="submit" class="btn btn-primary w-full btn-lg" style="margin-top:4px;">Create Account</button>
+
+      <button type="submit" class="btn btn-primary w-full btn-lg" style="margin-top:6px;">
+        Complete Registration →
+      </button>
     </form>
 
     <div class="login-link">
-      Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a>
+      Already registered? <a href="{% url 'accounts:login' %}">Sign in here</a>
     </div>
   </div>
 </div>

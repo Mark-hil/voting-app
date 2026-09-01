@@ -1,48 +1,93 @@
 {% extends 'admin_panel/base_admin.html' %}
-{% block title %}Results — {{ election.title }} — VoteApp Admin{% endblock %}
+{% block title %}Certified Results — {{ election.title }} — VoteApp Admin{% endblock %}
 
 {% block admin_content %}
 <div class="page-header flex justify-between items-center" style="flex-wrap:wrap;gap:12px;">
   <div>
-    <a href="{% url 'admin_panel:election_manage' election.id %}" style="font-size:.875rem;color:var(--blue);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:8px;">← Manage Election</a>
-    <h1 class="page-title">Results: {{ election.title }}</h1>
-    <p class="page-subtitle">{{ election.position }} · {{ total_votes }} vote{{ total_votes|pluralize }} cast · {{ election.participation_rate }}% participation</p>
-  </div>
-  <div class="flex gap-2">
-    <a href="?export=csv" class="btn btn-secondary btn-sm">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Export CSV
+    <a href="{% url 'admin_panel:election_manage' election.id %}" class="btn btn-ghost btn-sm mb-2" style="padding-left:0;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to Election Config
     </a>
+    <h1 class="page-title">Results: {{ election.title }}</h1>
+    <p class="page-subtitle">{{ election.position }} · {{ total_votes }} total vote{{ total_votes|pluralize }} · {{ election.participation_rate }}% turnout</p>
+  </div>
+  
+  <a href="?export=csv" class="btn btn-secondary">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+    Export CSV Report
+  </a>
+</div>
+
+<!-- Metrics Overview -->
+<div class="grid-3 mb-6" style="max-width:840px;">
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ total_votes }}</div>
+      <div class="stat-label">Total Votes</div>
+    </div>
+    <div class="stat-icon" style="background:var(--primary-50);color:var(--primary-600);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ election.total_eligible }}</div>
+      <div class="stat-label">Total Registered</div>
+    </div>
+    <div class="stat-icon" style="background:var(--emerald-50);color:var(--emerald-600);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-value" style="color:var(--primary-600);">{{ election.participation_rate }}%</div>
+      <div class="stat-label">Turnout Rate</div>
+    </div>
+    <div class="stat-icon" style="background:var(--amber-50);color:var(--amber-600);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+    </div>
   </div>
 </div>
 
 {% if results_data %}
-<div style="max-width:720px;">
+<div style="max-width:840px;">
   {% for item in results_data %}
-  <div class="card mb-4" style="{% if forloop.first %}border-left:4px solid var(--blue);{% endif %}">
+  <div class="card mb-4" style="{% if forloop.first %}border-color:var(--primary-300);background:linear-gradient(to right, var(--primary-50), #FFFFFF);{% endif %}">
     <div class="card-body">
       <div class="flex justify-between items-center mb-3">
         <div class="flex items-center gap-3">
           {% if forloop.first %}
-          <div style="font-size:1.5rem;">🏆</div>
+          <div style="font-size:1.6rem;flex-shrink:0;">👑</div>
           {% else %}
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--gray-600);font-size:.85rem;">#{{ forloop.counter }}</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--slate-100);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--slate-600);font-size:0.85rem;flex-shrink:0;">#{{ forloop.counter }}</div>
           {% endif %}
-          <div class="font-semibold" style="font-size:1rem;color:var(--gray-900);">{{ item.candidate.name }}</div>
+          {% if item.candidate.photo %}
+          <img src="{{ item.candidate.photo.url }}" alt="{{ item.candidate.name }}" style="width:48px;height:48px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--slate-200);box-shadow:var(--shadow-xs);flex-shrink:0;">
+          {% else %}
+          <div style="width:48px;height:48px;border-radius:var(--radius);background:var(--primary-100);color:var(--primary-700);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0;">{{ item.candidate.name|first|upper }}</div>
+          {% endif %}
+          <div>
+            <div class="font-bold text-lg" style="color:var(--slate-900);">{{ item.candidate.name }}</div>
+            {% if item.candidate.bio %}<div class="text-xs text-gray">{{ item.candidate.bio|truncatechars:70 }}</div>{% endif %}
+          </div>
         </div>
         <div style="text-align:right;">
-          <div class="font-bold text-xl">{{ item.votes }}</div>
-          <div class="text-xs text-gray">{{ item.percentage }}%</div>
+          <div style="font-family:var(--font-heading);font-size:1.5rem;font-weight:800;color:var(--slate-900);">{{ item.votes }} <span style="font-size:0.8rem;font-weight:500;color:var(--slate-400);">votes</span></div>
+          <div style="font-size:0.85rem;font-weight:700;color:var(--primary-600);">{{ item.percentage }}%</div>
         </div>
       </div>
       <div class="progress-bar" style="height:10px;">
-        <div class="progress-fill" style="width:{{ item.percentage }}%;background:{% if forloop.first %}var(--blue){% else %}var(--gray-400){% endif %};height:10px;"></div>
+        <div class="progress-fill" style="width:{{ item.percentage }}%;background:{% if forloop.first %}var(--primary-gradient){% else %}var(--slate-400){% endif %};height:10px;"></div>
       </div>
     </div>
   </div>
   {% endfor %}
 </div>
 {% else %}
-<div class="card"><div class="empty-state"><p>No votes have been cast yet.</p></div></div>
+<div class="card" style="max-width:840px;">
+  <div class="empty-state"><p>No votes have been recorded yet.</p></div>
+</div>
 {% endif %}
 {% endblock %}

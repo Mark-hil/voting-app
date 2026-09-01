@@ -1,4 +1,6 @@
+from datetime import datetime
 from django import forms
+from django.utils import timezone
 from django.core.validators import FileExtensionValidator
 from elections.models import Election, Candidate
 from accounts.models import CustomUser
@@ -68,9 +70,24 @@ class ElectionForm(forms.ModelForm):
         self.fields['eligible_voters'].queryset = CustomUser.objects.filter(role='voter')
         self.fields['eligible_voters'].required = False
         
-        # Hide the original datetime fields since we're using separate fields
         self.fields['start_date'].required = True
         self.fields['end_date'].required = True
+
+        if self.instance and self.instance.pk:
+            if self.instance.start_date:
+                self.initial['start_date'] = self.instance.start_date.strftime('%Y-%m-%d')
+                time_str = self.instance.start_date.strftime('%H:%M')
+                choice_keys = [c[0] for c in self.TIME_CHOICES]
+                if time_str not in choice_keys:
+                    self.fields['start_time'].choices = sorted(self.TIME_CHOICES + [(time_str, time_str)], key=lambda x: x[0])
+                self.initial['start_time'] = time_str
+            if self.instance.end_date:
+                self.initial['end_date'] = self.instance.end_date.strftime('%Y-%m-%d')
+                time_str = self.instance.end_date.strftime('%H:%M')
+                choice_keys = [c[0] for c in self.TIME_CHOICES]
+                if time_str not in choice_keys:
+                    self.fields['end_time'].choices = sorted(self.TIME_CHOICES + [(time_str, time_str)], key=lambda x: x[0])
+                self.initial['end_time'] = time_str
 
     def clean(self):
         cleaned_data = super().clean()
@@ -79,28 +96,22 @@ class ElectionForm(forms.ModelForm):
         end_date = cleaned_data.get('end_date')
         end_time = cleaned_data.get('end_time')
 
-        # Combine date and time into datetime (using GMT+0/UTC)
-        from datetime import datetime
-
         if start_date and start_time:
-            # Convert time string to time object
             time_obj = datetime.strptime(start_time, '%H:%M').time()
-            # Create datetime in UTC (GMT+0)
-            start_datetime = datetime.combine(start_date, time_obj)
-            cleaned_data['start_date'] = start_datetime
+            naive_start = datetime.combine(start_date, time_obj)
+            cleaned_data['start_date'] = timezone.make_aware(naive_start, timezone.utc)
 
         if end_date and end_time:
-            # Convert time string to time object
             time_obj = datetime.strptime(end_time, '%H:%M').time()
-            # Create datetime in UTC (GMT+0)
-            end_datetime = datetime.combine(end_date, time_obj)
-            cleaned_data['end_date'] = end_datetime
+            naive_end = datetime.combine(end_date, time_obj)
+            cleaned_data['end_date'] = timezone.make_aware(naive_end, timezone.utc)
 
         start = cleaned_data.get('start_date')
         end = cleaned_data.get('end_date')
         if start and end and end <= start:
             raise forms.ValidationError('End date must be after start date.')
         return cleaned_data
+
 
 
 class CandidateForm(forms.ModelForm):

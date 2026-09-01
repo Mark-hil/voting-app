@@ -1,227 +1,78 @@
 {% extends 'admin_panel/base_admin.html' %}
-
-{% block title %}Import Voters - VoteApp{% endblock %}
+{% block title %}Bulk Import Voters — VoteApp Admin{% endblock %}
 
 {% block admin_content %}
 <div class="page-header">
-  <h1 class="page-title">Import Voters</h1>
-  <div class="breadcrumb">
-    <a href="{% url 'admin_panel:voter_list' %}">Voters</a>
-    <span class="separator">/</span>
-    <span>Import</span>
-  </div>
+  <a href="{% url 'admin_panel:voter_list' %}" class="btn btn-ghost btn-sm mb-2" style="padding-left:0;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    Back to Voters Roster
+  </a>
+  <h1 class="page-title">Bulk Import Voters via CSV</h1>
+  <p class="page-subtitle">Upload a roster of voters. Unique voting codes will be automatically generated.</p>
 </div>
 
-<div class="card">
-  <div class="card-header">
-    <h2 class="card-title">Upload CSV File</h2>
-  </div>
-  <div class="card-body">
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      {% if form.errors %}
-      <div class="alert alert-error">
-        {% for field, errors in form.errors.items %}
-        {% for error in errors %}
-        <p>{{ error }}</p>
-        {% endfor %}
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      <div class="form-group">
-        <label class="form-label">CSV File</label>
-        {{ form.csv_file }}
-        {% if form.csv_file.errors %}
-          {% for error in form.csv_file.errors %}
-            <div class="form-error">{{ error }}</div>
+<div class="grid-2" style="align-items:start;">
+  <!-- Upload Form Card -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Upload CSV File</span>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.errors %}
+        <div class="alert alert-error mb-4">
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}<p>{{ error }}</p>{% endfor %}
           {% endfor %}
+        </div>
         {% endif %}
-        <div class="form-hint">Upload a CSV file with columns: name, index (index number)</div>
-      </div>
 
-      <div class="form-group">
-        <h3 class="form-subtitle">CSV Format Instructions</h3>
-        <p class="form-help">Create a CSV file with the following columns:</p>
-        <ul class="form-help">
-          <li><strong>name</strong> or <strong>STUDENT'S NAME</strong> - Full name of voter (required)</li>
-          <li><strong>index</strong> or <strong>INDEX NUMBER</strong> - Index number for unique username (optional)</li>
-        </ul>
-        <p class="form-help">Example CSV content (simple format):</p>
-        <pre class="code-example">name,index
-John Doe,1
-Jane Smith,2
-Bob Johnson,3</pre>
-        <p class="form-help">Example CSV content (student format):</p>
-        <pre class="code-example">STUDENT'S NAME,INDEX NUMBER
+        <div class="form-group">
+          <label class="form-label">Select CSV File</label>
+          {{ form.csv_file }}
+          {% if form.csv_file.errors %}
+            {% for error in form.csv_file.errors %}
+              <div class="form-error">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+          <div class="form-hint">Accepted file type: <code>.csv</code></div>
+        </div>
+
+        <div class="flex gap-3" style="margin-top:24px;">
+          <a href="{% url 'admin_panel:voter_list' %}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary btn-lg">Process & Import Voters →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Format Instructions Card -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">CSV Structure & Format</span>
+    </div>
+    <div class="card-body">
+      <p class="text-sm text-gray mb-3">Ensure your CSV header contains one of the following supported column structures:</p>
+      
+      <div class="mb-4">
+        <div class="text-xs font-bold text-gray uppercase mb-1">Standard Format</div>
+        <pre style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:10px 14px;font-family:monospace;font-size:0.8rem;color:var(--slate-800);">name,index
 John Doe,NMCSMRGN230001
-Jane Smith,NMCSMRGN230002
-Bob Johnson,NMCSMRGN230003</pre>
-        <p class="form-help">Each imported voter will be assigned a unique code for login.</p>
+Jane Smith,NMCSMRGN230002</pre>
       </div>
 
-      <div class="form-actions">
-        <a href="{% url 'admin_panel:voter_list' %}" class="btn btn-secondary">Cancel</a>
-        <button type="submit" class="btn btn-primary">Import Voters</button>
+      <div class="mb-4">
+        <div class="text-xs font-bold text-gray uppercase mb-1">Student / Official Format</div>
+        <pre style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:10px 14px;font-family:monospace;font-size:0.8rem;color:var(--slate-800);">STUDENT'S NAME,INDEX NUMBER
+John Doe,NMCSMRGN230001
+Jane Smith,NMCSMRGN230002</pre>
       </div>
-    </form>
+
+      <div style="background:var(--primary-50);border:1px solid var(--primary-100);border-radius:var(--radius);padding:12px 14px;font-size:0.8rem;color:var(--primary-800);">
+        💡 Each imported user automatically receives a unique 8-character code and voter role.
+      </div>
+    </div>
   </div>
 </div>
-
-<style>
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.page-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-}
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.breadcrumb a {
-  color: #667eea;
-  text-decoration: none;
-}
-
-.breadcrumb a:hover {
-  text-decoration: underline;
-}
-
-.separator {
-  color: #9ca3af;
-}
-
-.card {
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.card-body {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-label {
-  display: block;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.5rem;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-help {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-top: 0.5rem;
-  line-height: 1.5;
-}
-
-.form-subtitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.75rem;
-}
-
-.code-example {
-  background: #f3f4f6;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  font-family: monospace;
-  font-size: 0.875rem;
-  overflow-x: auto;
-  margin: 0.5rem 0;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-primary {
-  background: #667eea;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #5568d3;
-}
-
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.btn-secondary:hover {
-  background: #e5e7eb;
-}
-
-.alert {
-  padding: 1rem;
-  border-radius: 0.375rem;
-  margin-bottom: 1.5rem;
-}
-
-.alert-error {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-}
-
-.alert-error p {
-  margin: 0.25rem 0;
-}
-</style>
 {% endblock %}

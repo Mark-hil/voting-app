@@ -67,7 +67,7 @@ class Candidate(models.Model):
     election = models.ForeignKey(Election, on_delete=models.CASCADE, related_name='candidates')
     name = models.CharField(max_length=200)
     bio = models.TextField(blank=True)
-    photo = models.ImageField(upload_to='candidates/', blank=True, null=True)
+    photo = models.ImageField(upload_to='voter_candidate/', blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 

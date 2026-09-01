@@ -1,49 +1,113 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard — VoteApp{% endblock %}
+{% block title %}Voter Portal — VoteApp{% endblock %}
 
 {% block body %}
 <div class="page-wrapper">
   <div class="content-only">
-    {% if messages %}
-    <div class="messages-container">
-      {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+      <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h1 class="hero-title">Welcome, {{ request.user.first_name|default:request.user.username }}! 👋</h1>
+          <p class="hero-subtitle">Participate in transparent, verified elections and view live cryptographic results.</p>
+        </div>
+        {% if request.user.unique_code %}
+        <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.25);border-radius:var(--radius-lg);padding:14px 20px;text-align:right;">
+          <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;opacity:0.85;">Your Voter Code</div>
+          <div style="font-family:var(--font-heading);font-size:1.3rem;font-weight:800;letter-spacing:0.05em;display:flex;align-items:center;gap:8px;">
+            <code>{{ request.user.unique_code }}</code>
+            <button type="button" onclick="copyToClipboard('{{ request.user.unique_code }}', this)" class="btn btn-ghost btn-sm" style="color:white;padding:2px 6px;" title="Copy Code">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+        </div>
+        {% endif %}
+      </div>
     </div>
-    {% endif %}
 
-    <div class="page-header flex justify-between items-center">
-      <div>
-        <h1 class="page-title">Hello, {{ request.user.first_name|default:request.user.username }} 👋</h1>
-        <p class="page-subtitle">Here are your available elections and voting history.</p>
+    <!-- Quick Stats -->
+    <div class="grid-3 mb-6">
+      <div class="stat-card">
+        <div>
+          <div class="stat-value">{{ active_elections|length }}</div>
+          <div class="stat-label">Active Elections Available</div>
+        </div>
+        <div class="stat-icon" style="background:var(--emerald-50);color:var(--emerald-600);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-value">{{ user_votes|length }}</div>
+          <div class="stat-label">Total Ballots Cast</div>
+        </div>
+        <div class="stat-icon" style="background:var(--primary-50);color:var(--primary-600);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-value" style="font-size:1.6rem;color:var(--emerald-600);">Verified</div>
+          <div class="stat-label">Voter Status</div>
+        </div>
+        <div class="stat-icon" style="background:var(--emerald-50);color:var(--emerald-600);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        </div>
       </div>
     </div>
 
     <!-- Active Elections -->
     <section class="mb-6">
-      <h2 class="text-lg font-semibold mb-4" style="color:var(--gray-800);">Active Elections</h2>
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h2 class="text-xl font-bold" style="color:var(--slate-900);">Active Elections</h2>
+          <p class="text-sm text-gray">Cast your ballot in currently open elections.</p>
+        </div>
+      </div>
+
       {% if active_elections %}
         <div class="grid-3">
           {% for election in active_elections %}
-          <div class="card" style="transition:box-shadow .2s;" onmouseenter="this.style.boxShadow='0 8px 24px rgba(37,99,235,.12)'" onmouseleave="this.style.boxShadow=''">
+          <div class="card">
             <div class="card-body">
-              <div class="flex justify-between items-center mb-2">
-                <span class="badge badge-green">● Active</span>
-                {% if election.id in voted_election_ids %}<span class="badge badge-blue">Voted</span>{% endif %}
+              <div class="flex justify-between items-center mb-3">
+                <span class="badge badge-green">● Active Now</span>
+                {% if election.id in voted_election_ids %}
+                  <span class="badge badge-blue">✓ Voted</span>
+                {% endif %}
               </div>
-              <h3 class="font-semibold text-lg" style="color:var(--gray-900);margin-bottom:4px;">{{ election.title }}</h3>
-              <p class="text-sm text-gray mb-2">Position: <strong>{{ election.position }}</strong></p>
+              <h3 class="font-bold text-lg mb-1" style="color:var(--slate-900);">{{ election.title }}</h3>
+              <p class="text-sm text-gray mb-3">Position: <strong style="color:var(--slate-700);">{{ election.position }}</strong></p>
+              
               {% if election.description %}
-              <p class="text-sm text-gray mb-3" style="line-height:1.5;">{{ election.description|truncatechars:80 }}</p>
+              <p class="text-sm text-gray mb-4" style="line-height:1.5;">{{ election.description|truncatechars:90 }}</p>
               {% endif %}
-              <div class="text-xs text-gray mb-4">
-                Ends: {{ election.end_date|date:"M d, Y H:i" }} UTC
+
+              <div style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:10px 12px;margin-bottom:20px;font-size:0.78rem;color:var(--slate-600);display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>Ends: <strong>{{ election.end_date|date:"M d, Y H:i" }} UTC</strong></span>
               </div>
+
               {% if election.id not in voted_election_ids %}
-              <a href="{% url 'elections:ballot' election.id %}" class="btn btn-primary w-full">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+              <a href="{% url 'elections:ballot' election.id %}" class="btn btn-primary w-full btn-lg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                 Vote Now
               </a>
               {% else %}
-              <button class="btn btn-secondary w-full" disabled>✓ Already Voted</button>
+              <div class="flex flex-col gap-2">
+                <button class="btn btn-secondary w-full" disabled style="background:var(--emerald-50);color:var(--emerald-700);border-color:var(--emerald-200);font-weight:700;">
+                  ✓ Ballot Submitted
+                </button>
+                {% if election.show_results %}
+                <a href="{% url 'elections:results' election.id %}" class="btn btn-secondary w-full">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                  View Live Results
+                </a>
+                {% endif %}
+              </div>
               {% endif %}
             </div>
           </div>
@@ -52,8 +116,8 @@
       {% else %}
         <div class="card">
           <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            <p>No active elections right now. Check back later!</p>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+            <p>No active elections right now. Check back soon!</p>
           </div>
         </div>
       {% endif %}
@@ -62,15 +126,40 @@
     <!-- Upcoming Elections -->
     {% if upcoming_elections %}
     <section class="mb-6">
-      <h2 class="text-lg font-semibold mb-4" style="color:var(--gray-800);">Upcoming Elections</h2>
+      <h2 class="text-xl font-bold mb-4" style="color:var(--slate-900);">Upcoming Elections</h2>
       <div class="grid-3">
         {% for election in upcoming_elections %}
         <div class="card">
           <div class="card-body">
             <span class="badge badge-yellow">Upcoming</span>
-            <h3 class="font-semibold mt-2 mb-1">{{ election.title }}</h3>
-            <p class="text-sm text-gray">{{ election.position }}</p>
-            <p class="text-xs text-gray mt-2">Starts: {{ election.start_date|date:"M d, Y H:i" }}</p>
+            <h3 class="font-bold text-lg mt-3 mb-1">{{ election.title }}</h3>
+            <p class="text-sm text-gray mb-3">{{ election.position }}</p>
+            <p class="text-xs text-gray">Opens: <strong>{{ election.start_date|date:"M d, Y H:i" }} UTC</strong></p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Completed Elections -->
+    {% if completed_elections %}
+    <section class="mb-6">
+      <h2 class="text-xl font-bold mb-4" style="color:var(--slate-900);">Completed Elections</h2>
+      <div class="grid-3">
+        {% for election in completed_elections %}
+        <div class="card">
+          <div class="card-body">
+            <div class="flex justify-between items-center mb-2">
+              <span class="badge badge-gray">Closed</span>
+              {% if election.id in voted_election_ids %}<span class="badge badge-green">Participated</span>{% endif %}
+            </div>
+            <h3 class="font-bold text-lg mt-2 mb-1">{{ election.title }}</h3>
+            <p class="text-sm text-gray mb-4">{{ election.position }}</p>
+            <a href="{% url 'elections:results' election.id %}" class="btn btn-secondary w-full">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+              View Certified Results
+            </a>
           </div>
         </div>
         {% endfor %}
@@ -80,43 +169,49 @@
 
     <!-- Voting History -->
     <section>
-      <h2 class="text-lg font-semibold mb-4" style="color:var(--gray-800);">Voting History</h2>
+      <h2 class="text-xl font-bold mb-4" style="color:var(--slate-900);">Your Voting History</h2>
       {% if user_votes %}
-      <div class="card">
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Election</th>
-                <th>Position</th>
-                <th>Candidate</th>
-                <th>Reference ID</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for vote in user_votes %}
-              <tr>
-                <td class="font-medium">{{ vote.election.title }}</td>
-                <td class="text-gray">{{ vote.election.position }}</td>
-                <td>{{ vote.candidate.name }}</td>
-                <td><code style="background:var(--gray-100);padding:2px 6px;border-radius:4px;font-size:.8rem;">{{ vote.reference_id }}</code></td>
-                <td class="text-gray text-sm">{{ vote.cast_at|date:"M d, Y" }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Election</th>
+              <th>Position</th>
+              <th>Candidate Voted</th>
+              <th>Receipt Reference ID</th>
+              <th>Date Cast</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for vote in user_votes %}
+            <tr>
+              <td class="font-bold" style="color:var(--slate-900);">{{ vote.election.title }}</td>
+              <td class="text-gray">{{ vote.election.position }}</td>
+              <td><span class="badge badge-blue">{{ vote.candidate.name }}</span></td>
+              <td>
+                <div class="flex items-center gap-2">
+                  <code style="background:var(--slate-100);border:1px solid var(--slate-200);padding:3px 8px;border-radius:4px;font-size:0.8rem;font-weight:700;letter-spacing:0.04em;">{{ vote.reference_id }}</code>
+                  <button type="button" onclick="copyToClipboard('{{ vote.reference_id }}', this)" class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="Copy Reference ID">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  </button>
+                </div>
+              </td>
+              <td class="text-gray text-sm">{{ vote.cast_at|date:"M d, Y H:i" }} UTC</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
       {% else %}
       <div class="card">
         <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1" ry="1"></rect></svg>
           <p>You haven't voted in any elections yet.</p>
         </div>
       </div>
       {% endif %}
     </section>
+
   </div>
 </div>
 {% endblock %}

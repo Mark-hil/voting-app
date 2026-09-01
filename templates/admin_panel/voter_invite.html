@@ -1,14 +1,17 @@
 {% extends 'admin_panel/base_admin.html' %}
-{% block title %}Invite Voter — VoteApp Admin{% endblock %}
+{% block title %}Invite Individual Voter — VoteApp Admin{% endblock %}
 
 {% block admin_content %}
 <div class="page-header">
-  <a href="{% url 'admin_panel:voter_list' %}" style="font-size:.875rem;color:var(--blue);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:12px;">← Back to Voters</a>
-  <h1 class="page-title">Invite Voter</h1>
-  <p class="page-subtitle">Add a new voter to the system.</p>
+  <a href="{% url 'admin_panel:voter_list' %}" class="btn btn-ghost btn-sm mb-2" style="padding-left:0;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    Back to Voters Roster
+  </a>
+  <h1 class="page-title">Register New Voter</h1>
+  <p class="page-subtitle">Add a single voter. An 8-character unique code will be assigned immediately.</p>
 </div>
 
-<div style="max-width:480px;">
+<div style="max-width:520px;">
   <div class="card">
     <div class="card-body">
       <form method="post">
@@ -18,23 +21,27 @@
           {{ form.first_name }}
           {% for e in form.first_name.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
         </div>
+
         <div class="form-group">
           <label class="form-label">Last Name</label>
           {{ form.last_name }}
           {% for e in form.last_name.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
         </div>
+
         <div class="form-group">
-          <label class="form-label">Email Address</label>
+          <label class="form-label">Email Address *</label>
           {{ form.email }}
           {% for e in form.email.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
         </div>
+
         <div class="alert alert-info mt-2 mb-4">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          The voter will be created with a temporary account. Share their email so they can log in and set a password.
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <div>Upon submission, an official voter profile with unique code is generated for immediate distribution.</div>
         </div>
+
         <div class="flex gap-3 justify-between">
           <a href="{% url 'admin_panel:voter_list' %}" class="btn btn-secondary">Cancel</a>
-          <button type="submit" class="btn btn-primary">Add Voter</button>
+          <button type="submit" class="btn btn-primary btn-lg">Generate Voter Credentials →</button>
         </div>
       </form>
     </div>

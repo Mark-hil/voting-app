@@ -3,100 +3,101 @@
 
 {% block admin_content %}
 <div class="page-header">
-  <a href="{% url 'admin_panel:election_list' %}" style="font-size:.875rem;color:var(--blue);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:12px;">← Back to Elections</a>
+  <a href="{% url 'admin_panel:election_list' %}" class="btn btn-ghost btn-sm mb-2" style="padding-left:0;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    Back to Elections
+  </a>
   <h1 class="page-title">{{ title }}</h1>
+  <p class="page-subtitle">Configure parameters, schedules, and eligibility for this election.</p>
 </div>
 
-<div style="max-width:680px;">
+<div style="max-width:760px;">
   <div class="card">
     <div class="card-body">
       <form method="post">
         {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-error mb-4">
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+          </div>
+        {% endif %}
+
         <div class="form-group">
           <label class="form-label">Election Title *</label>
           {{ form.title }}
           {% for e in form.title.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
         </div>
+
         <div class="form-group">
           <label class="form-label">Position Being Elected *</label>
           {{ form.position }}
           {% for e in form.position.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
         </div>
+
         <div class="form-group">
-          <label class="form-label">Description</label>
+          <label class="form-label">Description & Context</label>
           {{ form.description }}
+          {% for e in form.description.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
         </div>
+
         <div class="form-group">
-          <label class="form-label">Start Date & Time (GMT+0) *</label>
+          <label class="form-label">Start Schedule (UTC) *</label>
           <div class="grid-2" style="gap:12px;">
             <div>
-              <label class="form-label" style="font-size:.8rem;">Date</label>
+              <label class="form-label" style="font-size:0.8rem;color:var(--slate-500);">Start Date</label>
               {{ form.start_date }}
               {% for e in form.start_date.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
             </div>
             <div>
-              <label class="form-label" style="font-size:.8rem;">Time</label>
+              <label class="form-label" style="font-size:0.8rem;color:var(--slate-500);">Start Time</label>
               {{ form.start_time }}
               {% for e in form.start_time.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
             </div>
           </div>
-          <div class="form-hint">All times are in GMT+0 (UTC) timezone</div>
         </div>
+
         <div class="form-group">
-          <label class="form-label">End Date & Time (GMT+0) *</label>
+          <label class="form-label">End Schedule (UTC) *</label>
           <div class="grid-2" style="gap:12px;">
             <div>
-              <label class="form-label" style="font-size:.8rem;">Date</label>
+              <label class="form-label" style="font-size:0.8rem;color:var(--slate-500);">End Date</label>
               {{ form.end_date }}
               {% for e in form.end_date.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
             </div>
             <div>
-              <label class="form-label" style="font-size:.8rem;">Time</label>
+              <label class="form-label" style="font-size:0.8rem;color:var(--slate-500);">End Time</label>
               {{ form.end_time }}
               {% for e in form.end_time.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
             </div>
           </div>
-          <div class="form-hint">All times are in GMT+0 (UTC) timezone</div>
+          <div class="form-hint">All dates and times are evaluated in UTC timezone.</div>
         </div>
+
         <div class="form-group">
-          <label class="form-label">Voting Type</label>
+          <label class="form-label">Voting Mode</label>
           {{ form.voting_type }}
         </div>
+
         <div class="form-group">
           <label class="form-label">Eligible Voters</label>
           {{ form.eligible_voters }}
-          <div class="form-hint">Hold Ctrl/Cmd to select multiple voters.</div>
+          <div class="form-hint">Select specific voters or hold Ctrl/Cmd to choose multiple voters.</div>
         </div>
-        <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+
+        <div class="form-group" style="display:flex;align-items:center;gap:12px;background:var(--slate-50);padding:14px 16px;border-radius:var(--radius);border:1px solid var(--slate-200);">
           {{ form.show_results }}
-          <label class="form-label" style="margin:0;cursor:pointer;">Show results to voters after voting</label>
+          <label class="form-label" for="id_show_results" style="margin:0;cursor:pointer;font-weight:600;color:var(--slate-800);">
+            Publish live results to voters after casting their ballot
+          </label>
         </div>
-        {% if form.non_field_errors %}
-        {% for error in form.non_field_errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}
-        {% endif %}
-        <hr class="divider">
-        <div class="flex gap-3 justify-between">
+
+        <div class="flex gap-3 justify-between" style="margin-top:28px;">
           <a href="{% url 'admin_panel:election_list' %}" class="btn btn-secondary">Cancel</a>
-          <button type="submit" class="btn btn-primary">Save Election</button>
+          <button type="submit" class="btn btn-primary btn-lg">Save & Deploy Election →</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-
-<style>
-  /* Time dropdown styling */
-  select.form-input {
-    cursor: pointer;
-  }
-  
-  select.form-input:hover {
-    border-color: #667eea;
-  }
-  
-  select.form-input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-</style>
 {% endblock %}

@@ -1,0 +1,229 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block title %}System Maintenance & Reset — VoteApp Admin{% endblock %}
+
+{% block admin_content %}
+<div class="page-header flex justify-between items-center" style="flex-wrap:wrap;gap:12px;">
+  <div>
+    <h1 class="page-title">System Maintenance & Reset</h1>
+    <p class="page-subtitle">Archive election data, purge stale sessions, reset credentials, or restore system to a clean slate.</p>
+  </div>
+</div>
+
+<!-- System Statistics Overview -->
+<div class="grid-4 mb-4">
+  <div class="card stat-card">
+    <div class="stat-icon" style="background:rgba(99, 102, 241, 0.1);color:var(--primary-600);">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect></svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ total_elections }}</div>
+      <div class="stat-label">Total Elections ({{ active_elections_count }} active, {{ completed_elections_count }} completed)</div>
+    </div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="stat-icon" style="background:rgba(16, 185, 129, 0.1);color:#10b981;">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ total_votes }}</div>
+      <div class="stat-label">Total Ballots Cast</div>
+    </div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="stat-icon" style="background:rgba(245, 158, 11, 0.1);color:#f59e0b;">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ total_voters }}</div>
+      <div class="stat-label">Registered Voters</div>
+    </div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="stat-icon" style="background:rgba(139, 92, 246, 0.1);color:#8b5cf6;">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><circle cx="19" cy="11" r="2"></circle></svg>
+    </div>
+    <div>
+      <div class="stat-value">{{ total_candidates }}</div>
+      <div class="stat-label">Total Candidates</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="align-items:start;">
+  
+  <!-- Column 1: Archival & Backup Tools -->
+  <div>
+    <!-- Full System Backup Card -->
+    <div class="card mb-4">
+      <div class="card-header flex justify-between items-center">
+        <div>
+          <span class="card-title">1. Full System Backup</span>
+          <p class="text-xs text-gray" style="margin-top:2px;">Export all elections, candidates, votes, and user data as JSON.</p>
+        </div>
+        <span class="badge badge-green">Recommended</span>
+      </div>
+      <div class="card-body">
+        <p class="text-sm text-gray mb-3">
+          Always take a complete data backup before archiving or wiping historical election records. This file can be restored or referenced at any time.
+        </p>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="export_backup">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download Database Backup (.JSON)
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Per-Election Audit Packs -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title">2. Download Election Audit Packs</span>
+        <p class="text-xs text-gray" style="margin-top:2px;">Bundled ZIP archives with official results, voter participation, and anonymized verification receipts.</p>
+      </div>
+      <div style="padding:0 20px;">
+        {% for election in elections %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--slate-100);">
+          <div>
+            <div class="font-bold text-sm" style="color:var(--slate-900);">{{ election.title }}</div>
+            <div class="text-xs text-gray">
+              {{ election.position }} · <span class="badge {% if election.status == 'completed' %}badge-gray{% elif election.status == 'active' %}badge-green{% else %}badge-yellow{% endif %}">{{ election.get_status_display }}</span> · {{ election.total_votes }} votes
+            </div>
+          </div>
+          <a href="{% url 'admin_panel:export_election_audit_pack' election.id %}" class="btn btn-secondary btn-sm" title="Download Complete Audit Pack">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Audit Pack (.ZIP)
+          </a>
+        </div>
+        {% empty %}
+        <div class="empty-state" style="padding:24px 0;"><p>No elections found in the system.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Column 2: System Clean-Up & Danger Zone -->
+  <div>
+    <!-- Workspace Maintenance Tools -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title">3. Post-Election Housekeeping</span>
+      </div>
+      <div class="card-body">
+        
+        <!-- Flush Sessions -->
+        <div class="mb-4" style="padding-bottom:16px;border-bottom:1px solid var(--slate-100);">
+          <div class="font-bold text-sm mb-1" style="color:var(--slate-900);">Purge Expired Sessions</div>
+          <p class="text-xs text-gray mb-2">Cleans stale user session tokens stored in the database to optimize query performance.</p>
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="clear_sessions">
+            <button type="submit" class="btn btn-secondary btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              Purge Expired Sessions
+            </button>
+          </form>
+        </div>
+
+        <!-- Reset Voter Codes -->
+        <div>
+          <div class="font-bold text-sm mb-1" style="color:var(--slate-900);">Voter Credentials Management</div>
+          <p class="text-xs text-gray mb-3">Clear or rotate single-use login codes for registered voters to prepare for future cycles.</p>
+          
+          <form method="post" action="{% url 'admin_panel:reset_voter_codes' %}" onsubmit="return confirm('Are you sure you want to update voter login codes?');">
+            {% csrf_token %}
+            <div class="grid-2 mb-3">
+              <div>
+                <label class="form-label" style="font-size:0.75rem;">Action</label>
+                <select name="reset_type" class="form-input" style="font-size:0.8rem;padding:6px 10px;">
+                  <option value="clear">Clear Login Codes (Invalidate)</option>
+                  <option value="regenerate">Regenerate Fresh Codes</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.75rem;">Target Voters</label>
+                <select name="target" class="form-input" style="font-size:0.8rem;padding:6px 10px;">
+                  <option value="all">All Voters ({{ total_voters }})</option>
+                  <option value="voted">Only Voters who voted</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Apply Code Updates</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Danger Zone: Total System Reset -->
+    <div class="card" style="border: 1px solid var(--rose-300);background: #fff8f8;">
+      <div class="card-header" style="border-bottom:1px solid var(--rose-200);background:rgba(244, 63, 94, 0.05);">
+        <div class="flex items-center gap-2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <span class="card-title" style="color:var(--rose-700);">Danger Zone: Data Wipe & Clean Slate</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="text-xs text-gray mb-3" style="color:#9f1239;">
+          Warning: The actions below permanently delete data from the database. Please download a database backup before proceeding.
+        </p>
+
+        <form method="post" id="dangerWipeForm" onsubmit="return validateWipeConfirmation();">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="wipe_data">
+
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-size:0.8rem;font-weight:700;color:var(--rose-900);">Select Wipe Strategy:</label>
+            
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.85rem;background:#fff;padding:10px;border-radius:6px;border:1px solid var(--rose-200);">
+                <input type="radio" name="wipe_type" value="votes_only" checked style="margin-top:3px;">
+                <div>
+                  <strong>Wipe Ballots & Votes Only</strong>
+                  <div class="text-xs text-gray">Deletes all vote records ({{ total_votes }} votes). Elections, candidates, and voter accounts are preserved.</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.85rem;background:#fff;padding:10px;border-radius:6px;border:1px solid var(--rose-200);">
+                <input type="radio" name="wipe_type" value="full_wipe" style="margin-top:3px;">
+                <div>
+                  <strong style="color:var(--rose-600);">Complete System Wipe (Total Clean Slate)</strong>
+                  <div class="text-xs text-gray">Deletes all votes, candidates (including photos), elections, and non-admin voter accounts. Restores system to zero data.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-size:0.8rem;color:var(--rose-900);">
+              Type <strong style="color:var(--rose-600);">RESET</strong> to confirm irreversible deletion:
+            </label>
+            <input type="text" name="confirmation" id="wipeConfirmationInput" class="form-input" placeholder="Type RESET" required style="border-color:var(--rose-300);">
+          </div>
+
+          <button type="submit" class="btn btn-danger btn-sm w-full" style="background:var(--rose-600);border-color:var(--rose-600);">
+            🚨 Execute System Reset
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function validateWipeConfirmation() {
+  const input = document.getElementById('wipeConfirmationInput').value.trim();
+  if (input !== 'RESET') {
+    alert('Please type RESET exactly into the confirmation field.');
+    return false;
+  }
+  return confirm('WARNING: You are about to permanently delete system data. Do you wish to continue?');
+}
+</script>
+{% endblock %}

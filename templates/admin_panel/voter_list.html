@@ -1,43 +1,47 @@
 {% extends 'admin_panel/base_admin.html' %}
-{% block title %}Voters — VoteApp Admin{% endblock %}
+{% block title %}Voters Roster — VoteApp Admin{% endblock %}
 
 {% block admin_content %}
 <div class="page-header flex justify-between items-center" style="flex-wrap:wrap;gap:12px;">
   <div>
-    <h1 class="page-title">Voters</h1>
-    <p class="page-subtitle">{{ voters_data|length }} voter{{ voters_data|length|pluralize }} registered.</p>
+    <h1 class="page-title">Voter Registry</h1>
+    <p class="page-subtitle">{{ voters_data|length }} registered voter{{ voters_data|length|pluralize }} in the system.</p>
   </div>
-  <div class="flex gap-2">
+  <div class="flex gap-2" style="flex-wrap:wrap;">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('resetCodesModal').style.display='flex'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+      Reset Voter Codes
+    </button>
     <a href="?export=csv{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Export Full CSV
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export CSV
     </a>
-    <a href="?export=codes{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-success btn-sm">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Export Login Codes
+    <a href="?export=codes{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      Export Codes List
     </a>
-    <a href="{% url 'admin_panel:voter_invite' %}" class="btn btn-primary btn-sm">+ Add Voter</a>
+    <a href="{% url 'admin_panel:voter_invite' %}" class="btn btn-primary btn-sm">+ Invite Voter</a>
   </div>
 </div>
 
-<!-- Filters -->
+<!-- Filters Bar -->
 <div class="card mb-4">
   <div class="card-body" style="padding:16px 20px;">
     <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-      <div style="flex:1;min-width:200px;">
-        <label class="form-label" style="font-size:.8rem;">Search</label>
-        <input type="text" name="search" value="{{ search }}" class="form-input" placeholder="Name or email...">
+      <div style="flex:1;min-width:220px;">
+        <label class="form-label" style="font-size:0.8rem;">Search Query</label>
+        <input type="text" name="search" value="{{ search }}" class="form-input" placeholder="Search by name, email, or index...">
       </div>
-      <div>
-        <label class="form-label" style="font-size:.8rem;">Status</label>
+      <div style="min-width:140px;">
+        <label class="form-label" style="font-size:0.8rem;">Participation Status</label>
         <select name="status" class="form-input">
-          <option value="">All</option>
+          <option value="">All Statuses</option>
           <option value="voted" {% if status_filter == 'voted' %}selected{% endif %}>Voted</option>
           <option value="not_voted" {% if status_filter == 'not_voted' %}selected{% endif %}>Not Voted</option>
         </select>
       </div>
       <div style="display:flex;gap:8px;">
-        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        <button type="submit" class="btn btn-primary btn-sm">Search / Filter</button>
         <a href="{% url 'admin_panel:voter_list' %}" class="btn btn-secondary btn-sm">Clear</a>
       </div>
     </form>
@@ -46,13 +50,13 @@
 
 <div class="card">
   {% if voters_data %}
-  <div class="table-wrapper">
+  <div class="table-wrapper" style="border:none;border-radius:0;">
     <table>
       <thead>
         <tr>
           <th>Voter</th>
-          <th>Username</th>
-          <th>Unique Code</th>
+          <th>Username / Index</th>
+          <th>Login Voter Code</th>
           <th>Email</th>
           <th>Status</th>
           <th>Joined</th>
@@ -64,25 +68,25 @@
         <tr>
           <td>
             <div class="flex items-center gap-3">
-              <div style="width:32px;height:32px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;">
+              <div class="avatar" style="width:34px;height:34px;font-size:0.85rem;">
                 {{ vd.voter.first_name|first|default:vd.voter.username|first|upper }}
               </div>
-              <div>
-                <div class="font-medium">{{ vd.voter.get_full_name|default:vd.voter.username }}</div>
+              <div class="font-bold" style="color:var(--slate-900);">
+                {{ vd.voter.get_full_name|default:vd.voter.username }}
               </div>
             </div>
           </td>
-          <td class="font-mono text-sm">{{ vd.voter.username }}</td>
+          <td><code style="background:var(--slate-100);border:1px solid var(--slate-200);padding:2px 6px;border-radius:4px;font-size:0.8rem;">{{ vd.voter.username }}</code></td>
           <td>
             {% if vd.voter.unique_code %}
             <div class="flex items-center gap-2">
-              <code class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-sm font-mono font-semibold">{{ vd.voter.unique_code }}</code>
-              <button onclick="copyToClipboard('{{ vd.voter.unique_code }}')" class="text-blue-600 hover:text-blue-800" title="Copy code">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              <code style="background:var(--primary-50);border:1px solid var(--primary-200);color:var(--primary-700);padding:3px 8px;border-radius:4px;font-size:0.85rem;font-weight:700;">{{ vd.voter.unique_code }}</code>
+              <button type="button" onclick="copyToClipboard('{{ vd.voter.unique_code }}', this)" class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="Copy unique code">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               </button>
             </div>
             {% else %}
-            <span class="text-gray text-sm">No code</span>
+            <span class="text-gray text-xs">Standard Password</span>
             {% endif %}
           </td>
           <td class="text-gray text-sm">{{ vd.voter.email|default:"—" }}</td>
@@ -94,7 +98,7 @@
             {% endif %}
           </td>
           <td class="text-sm text-gray">{{ vd.voter.date_joined|date:"M d, Y" }}</td>
-          <td class="font-semibold">{{ vd.voter.votes.count }}</td>
+          <td class="font-bold">{{ vd.voter.votes.count }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -102,27 +106,45 @@
   </div>
   {% else %}
   <div class="empty-state">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-    <p>No voters found. <a href="{% url 'admin_panel:voter_invite' %}" style="color:var(--blue);">Invite a voter</a>.</p>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+    <p>No voters found matching your criteria. <a href="{% url 'admin_panel:voter_invite' %}" style="color:var(--primary-600);font-weight:600;">Invite a voter →</a></p>
   </div>
   {% endif %}
 </div>
 
-<script>
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(function() {
-    // Show success feedback
-    const button = event.target.closest('button');
-    const originalHTML = button.innerHTML;
-    button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
-    button.style.color = '#10b981';
-    setTimeout(() => {
-      button.innerHTML = originalHTML;
-      button.style.color = '';
-    }, 2000);
-  }).catch(function(err) {
-    console.error('Failed to copy: ', err);
-  });
-}
-</script>
+<!-- Reset Voter Codes Modal -->
+<div id="resetCodesModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="width:100%;max-width:460px;background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-xl);">
+    <div class="card-header flex justify-between items-center" style="border-bottom:1px solid var(--slate-100);">
+      <span class="card-title">Reset / Rotate Voter Login Codes</span>
+      <button type="button" onclick="document.getElementById('resetCodesModal').style.display='none'" class="btn btn-ghost btn-sm" style="font-size:1.2rem;line-height:1;padding:0 6px;">&times;</button>
+    </div>
+    <div class="card-body">
+      <p class="text-sm text-gray mb-3">
+        Prepare voter credentials for an upcoming election or invalidate single-use codes from past elections.
+      </p>
+      <form method="post" action="{% url 'admin_panel:reset_voter_codes' %}">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+          <label class="form-label" style="font-size:0.8rem;">Action Type</label>
+          <select name="reset_type" class="form-input">
+            <option value="clear">Clear Login Codes (Invalidate old codes)</option>
+            <option value="regenerate">Regenerate Fresh Login Codes</option>
+          </select>
+        </div>
+        <div class="form-group mb-4">
+          <label class="form-label" style="font-size:0.8rem;">Target Audience</label>
+          <select name="target" class="form-input">
+            <option value="all">All Voters ({{ voters_data|length }})</option>
+            <option value="voted">Only Voters who have voted</option>
+          </select>
+        </div>
+        <div class="flex justify-between items-center">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('resetCodesModal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Confirm Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}

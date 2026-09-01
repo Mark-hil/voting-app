@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.http import HttpResponse
 from django.db.models import Q
+import csv
 from .models import Election, Candidate, Vote
 
 
@@ -94,11 +96,18 @@ def confirmation(request, vote_id):
 
 @login_required
 def results(request, election_id):
-    if not request.user.is_admin_user():
-        messages.error(request, 'You do not have permission to view election results.')
-        return redirect('elections:dashboard')
-
     election = get_object_or_404(Election, id=election_id)
+    user = request.user
+
+    # Admin always has access; voters need eligibility and published results or ended election
+    if not user.is_admin_user():
+        if not election.eligible_voters.filter(id=user.id).exists():
+            messages.error(request, 'You are not eligible to view results for this election.')
+            return redirect('elections:dashboard')
+
+        if not election.show_results and not election.has_ended and election.status != 'completed':
+            messages.info(request, 'Results for this election have not been published yet.')
+            return redirect('elections:dashboard')
 
     candidates = election.candidates.all()
     total_votes = election.total_votes
@@ -112,6 +121,15 @@ def results(request, election_id):
         })
 
     results_data.sort(key=lambda x: x['votes'], reverse=True)
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="results_{election.id}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Rank', 'Candidate', 'Votes', 'Percentage'])
+        for i, r in enumerate(results_data, 1):
+            writer.writerow([i, r['candidate'].name, r['votes'], f"{r['percentage']}%"])
+        return response
 
     return render(request, 'elections/results.html', {
         'election': election,

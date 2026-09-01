@@ -2,14 +2,34 @@
 {% block title %}Manage — {{ election.title }} — VoteApp{% endblock %}
 
 {% block admin_content %}
-<div class="page-header flex justify-between items-center" style="flex-wrap:wrap;gap:12px;">
+<div class="page-header flex justify-between items-center" style="flex-wrap:wrap;gap:14px;">
   <div>
-    <a href="{% url 'admin_panel:election_list' %}" style="font-size:.875rem;color:var(--blue);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:8px;">← Elections</a>
+    <a href="{% url 'admin_panel:election_list' %}" class="btn btn-ghost btn-sm" style="padding-left:0;margin-bottom:6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to Elections
+    </a>
     <h1 class="page-title">{{ election.title }}</h1>
-    <p class="page-subtitle">{{ election.position }}</p>
+    <p class="page-subtitle">{{ election.position }} · Created by {{ election.created_by.get_full_name|default:election.created_by.username }}</p>
   </div>
-  <div class="flex gap-2" style="flex-wrap:wrap;">
-    <a href="{% url 'admin_panel:election_results' election.id %}" class="btn btn-secondary btn-sm">View Results</a>
+
+  <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+    <a href="{% url 'admin_panel:export_election_audit_pack' election.id %}" class="btn btn-primary btn-sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Audit Pack (.ZIP)
+    </a>
+
+    <a href="{% url 'admin_panel:election_results' election.id %}" class="btn btn-secondary btn-sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      Official Results
+    </a>
+    
+    {% if election.status != 'completed' %}
+    <a href="{% url 'admin_panel:extend_voting_time' election.id %}" class="btn btn-secondary btn-sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      Extend Voting
+    </a>
+    {% endif %}
+
     <!-- Status Toggle -->
     <form method="post" style="display:inline;">
       {% csrf_token %}
@@ -19,101 +39,136 @@
         <button type="submit" class="btn btn-success btn-sm">▶ Publish Election</button>
       {% elif election.status == 'active' %}
         <input type="hidden" name="status" value="completed">
-        <button type="submit" class="btn btn-danger btn-sm">■ End Election</button>
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('End this election and declare final results?');">■ End Election</button>
+      {% elif election.status == 'completed' %}
+        <input type="hidden" name="status" value="active">
+        <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--slate-600);" onclick="return confirm('Re-open this completed election to active status?');">🔓 Re-open Election</button>
       {% else %}
-        <span class="badge {% if election.status == 'completed' %}badge-gray{% else %}badge-red{% endif %}" style="padding:8px 14px;">{{ election.get_status_display }}</span>
+        <span class="badge badge-red">{{ election.get_status_display }}</span>
       {% endif %}
     </form>
+
+    <!-- Results Visibility Toggle -->
     <form method="post" style="display:inline;">
       {% csrf_token %}
       <input type="hidden" name="action" value="toggle_results">
-      <button type="submit" class="btn btn-secondary btn-sm">
-        {% if election.show_results %}🙈 Hide Results{% else %}👁 Show Results{% endif %}
+      <button type="submit" class="btn {% if election.show_results %}btn-success{% else %}btn-secondary{% endif %} btn-sm">
+        {% if election.show_results %}👁 Results Public{% else %}🙈 Results Hidden{% endif %}
       </button>
     </form>
   </div>
 </div>
 
-<div class="grid-2" style="align-items:start;">
-  <!-- Election Details -->
-  <div>
-    <div class="card mb-4">
-      <div class="card-header"><span class="card-title">Election Details</span></div>
-      <div class="card-body">
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="update_election">
-          {% for field in election_form %}
-          <div class="form-group">
-            <label class="form-label">{{ field.label }}</label>
-            {{ field }}
-            {% for e in field.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
-          </div>
-          {% endfor %}
-          <button type="submit" class="btn btn-primary btn-sm">Update Details</button>
-        </form>
-        
-        {% if election.has_ended %}
-        <div class="mt-3">
-          <a href="{% url 'admin_panel:extend_voting_time' election.id %}" class="btn btn-warning btn-sm w-full">
-            <i class="fas fa-clock"></i> Extend Voting Time
-          </a>
+{% if election.status == 'completed' %}
+<!-- Post-Election Audit & Wrap-Up Callout -->
+<div class="card mb-4" style="background:linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(16, 185, 129, 0.06));border:1px solid rgba(99, 102, 241, 0.2);">
+  <div class="card-body" style="padding:16px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--primary-100);color:var(--primary-700);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+          🏁
         </div>
-        {% endif %}
+        <div>
+          <div class="font-bold" style="color:var(--slate-900);">Post-Election Finalized & Auditable</div>
+          <p class="text-xs text-gray" style="margin:0;">
+            This election has officially concluded with <strong>{{ election.total_votes }}</strong> ballots cast ({{ election.participation_rate }}% turnout). Ballots and candidate records are locked for audit preservation.
+          </p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a href="{% url 'admin_panel:export_election_audit_pack' election.id %}" class="btn btn-primary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Download Audit Pack (.ZIP)
+        </a>
       </div>
     </div>
   </div>
+</div>
+{% endif %}
 
-  <!-- Candidates -->
+<div class="grid-2" style="align-items:start;">
+  <!-- Left Column: Election Details Form -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="card-title">Election Configuration</span>
+      <span class="badge {% if election.status == 'active' %}badge-green{% elif election.status == 'completed' %}badge-gray{% elif election.status == 'draft' %}badge-yellow{% else %}badge-red{% endif %}">
+        {{ election.get_status_display }}
+      </span>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_election">
+        {% for field in election_form %}
+        <div class="form-group">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% for e in field.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right Column: Candidates & Turnout -->
   <div>
+    <!-- Candidates List -->
     <div class="card mb-4">
-      <div class="card-header">
+      <div class="card-header flex justify-between items-center">
         <span class="card-title">Candidates ({{ candidates.count }})</span>
       </div>
-      <div style="padding: 0 16px;">
+      
+      <div style="padding:0 24px;">
         {% for candidate in candidates %}
-        <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--gray-100);">
-          <div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.9rem;flex-shrink:0;">
-            {% if candidate.photo %}<img src="{{ candidate.photo.url }}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">{% else %}{{ candidate.name|first|upper }}{% endif %}
+        <div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--slate-100);">
+          <div class="avatar" style="width:44px;height:44px;font-size:1.1rem;overflow:hidden;border-radius:var(--radius);">
+            {% if candidate.photo %}
+              <img src="{{ candidate.photo.url }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+              <span>{{ candidate.name|first|upper }}</span>
+            {% endif %}
           </div>
           <div style="flex:1;min-width:0;">
-            <div class="font-medium" style="color:var(--gray-900);">{{ candidate.name }}</div>
-            {% if candidate.bio %}<div class="text-xs text-gray">{{ candidate.bio|truncatechars:50 }}</div>{% endif %}
+            <div class="font-bold" style="color:var(--slate-900);">{{ candidate.name }}</div>
+            {% if candidate.bio %}<div class="text-xs text-gray">{{ candidate.bio|truncatechars:60 }}</div>{% endif %}
           </div>
-          <div class="text-sm font-semibold" style="color:var(--blue);">{{ candidate.vote_count }} votes</div>
+          <div class="text-sm font-bold" style="color:var(--primary-600);">
+            {{ candidate.vote_count }} <span style="font-size:0.75rem;font-weight:500;color:var(--slate-400);">votes</span>
+          </div>
           <form method="post">
             {% csrf_token %}
             <input type="hidden" name="action" value="delete_candidate">
             <input type="hidden" name="candidate_id" value="{{ candidate.id }}">
-            <button type="submit" class="btn btn-ghost btn-sm text-red" onclick="return confirm('Remove {{ candidate.name }}?')">✕</button>
+            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--rose-600);" onclick="return confirm('Remove {{ candidate.name }}?')">✕</button>
           </form>
         </div>
         {% empty %}
-        <div class="empty-state" style="padding:24px;"><p>No candidates added yet.</p></div>
+        <div class="empty-state" style="padding:32px 16px;"><p>No candidates added yet.</p></div>
         {% endfor %}
       </div>
 
-      <!-- Add Candidate Form -->
-      <div style="padding:16px;background:var(--gray-50);border-top:1px solid var(--gray-200);border-radius:0 0 var(--radius-lg) var(--radius-lg);">
-        <div class="font-medium text-sm mb-3" style="color:var(--gray-700);">Add Candidate</div>
+      <!-- Add Candidate Form with Photo Upload -->
+      <div style="padding:20px 24px;background:var(--slate-50);border-top:1px solid var(--slate-200);border-radius:0 0 var(--radius-lg) var(--radius-lg);">
+        <div class="font-bold text-sm mb-3" style="color:var(--slate-900);">Add New Candidate</div>
         <form method="post" enctype="multipart/form-data">
           {% csrf_token %}
           <input type="hidden" name="action" value="add_candidate">
           <div class="form-group">
-            <label class="form-label" style="font-size:.8rem;">Full Name *</label>
+            <label class="form-label" style="font-size:0.8rem;">Full Name *</label>
             {{ candidate_form.name }}
           </div>
           <div class="form-group">
-            <label class="form-label" style="font-size:.8rem;">Bio / Description</label>
+            <label class="form-label" style="font-size:0.8rem;">Bio / Qualifications</label>
             {{ candidate_form.bio }}
           </div>
           <div class="grid-2">
             <div class="form-group">
-              <label class="form-label" style="font-size:.8rem;">Photo (optional)</label>
-              <input type="file" name="photo" accept="image/*" class="form-input" style="font-size:.8rem;padding:6px;">
+              <label class="form-label" style="font-size:0.8rem;">Candidate Photo</label>
+              <input type="file" name="photo" accept="image/*" class="form-input" style="font-size:0.8rem;padding:7px;">
             </div>
             <div class="form-group">
-              <label class="form-label" style="font-size:.8rem;">Display Order</label>
+              <label class="form-label" style="font-size:0.8rem;">Display Order</label>
               {{ candidate_form.order }}
             </div>
           </div>
@@ -122,40 +177,28 @@
       </div>
     </div>
 
-    <!-- Stats -->
+    <!-- Voter Turnout Metric Box -->
     <div class="card">
-      <div class="card-header"><span class="card-title">Stats</span></div>
+      <div class="card-header"><span class="card-title">Voter Engagement</span></div>
       <div class="card-body">
         <div class="flex justify-between text-sm mb-2">
-          <span class="text-gray">Total Eligible</span>
-          <span class="font-semibold">{{ election.total_eligible }}</span>
+          <span class="text-gray">Registered Voters</span>
+          <span class="font-bold">{{ election.total_eligible }}</span>
         </div>
         <div class="flex justify-between text-sm mb-2">
-          <span class="text-gray">Votes Cast</span>
-          <span class="font-semibold">{{ election.total_votes }}</span>
+          <span class="text-gray">Ballots Cast</span>
+          <span class="font-bold">{{ election.total_votes }}</span>
         </div>
         <div class="flex justify-between text-sm mb-3">
-          <span class="text-gray">Participation</span>
-          <span class="font-semibold text-blue">{{ election.participation_rate }}%</span>
+          <span class="text-gray">Turnout Percentage</span>
+          <span class="font-bold" style="color:var(--primary-600);">{{ election.participation_rate }}%</span>
         </div>
         <div class="progress-bar">
-          <div class="progress-fill" data-width="{{ election.participation_rate }}"></div>
+          <div class="progress-fill" style="width:{{ election.participation_rate }}%;"></div>
         </div>
       </div>
     </div>
+
   </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const progressFills = document.querySelectorAll('.progress-fill');
-  progressFills.forEach(function(element) {
-    const width = element.getAttribute('data-width');
-    if (width) {
-      element.style.width = width + '%';
-    }
-  });
-});
-</script>
-
 {% endblock %}

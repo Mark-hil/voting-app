@@ -3,193 +3,173 @@
 
 {% block extra_head %}
 <style>
-  .ballot-wrapper { max-width: 720px; margin: 0 auto; padding: 32px 16px; }
-  .ballot-header { text-align: center; margin-bottom: 32px; }
-  .ballot-position { display: inline-block; background: var(--blue-light); color: var(--blue); font-size: .8rem; font-weight: 600; padding: 4px 14px; border-radius: 999px; margin-bottom: 12px; }
-  .ballot-title { font-size: 1.6rem; font-weight: 800; color: var(--gray-900); margin-bottom: 8px; }
-  .ballot-instructions { background: var(--yellow-light); border: 1px solid #FDE68A; border-radius: var(--radius); padding: 12px 16px; font-size: .875rem; color: #92400E; margin-bottom: 28px; display: flex; align-items: flex-start; gap: 10px; }
-  .candidate-card { 
-  border: 2px solid var(--gray-200); 
-  border-radius: 16px; 
-  padding: 24px; 
-  cursor: pointer; 
-  transition: all .3s cubic-bezier(0.4, 0, 0.2, 1); 
-  margin-bottom: 16px; 
-  display: flex; 
-  align-items: center; 
-  gap: 24px; 
-  background: white; 
-  position: relative;
-  overflow: hidden;
-}
-  .candidate-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
-    background-size: 200% 100%;
-    animation: shimmer 3s linear infinite;
-    opacity: 0;
-    transition: opacity 0.3s;
+  .ballot-wrapper {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
   }
-  .candidate-card:hover::before {
-    opacity: 1;
+  .ballot-header {
+    text-align: center;
+    margin-bottom: 32px;
   }
-  .candidate-card:hover { 
-    border-color: #667eea; 
-    background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%); 
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+  .ballot-position-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary-50);
+    color: var(--primary-700);
+    border: 1px solid var(--primary-200);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: var(--radius-full);
+    margin-bottom: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
-  .candidate-card.selected { 
-    border-color: #667eea; 
-    background: linear-gradient(135deg, #f0f4ff 0%, #e8efff 100%); 
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2), 0 12px 24px rgba(102, 126, 234, 0.15);
-    transform: translateY(-2px);
-  }
-  .candidate-avatar { 
-  width: 96px; 
-  height: 96px; 
-  border-radius: 12px; 
-  background: linear-gradient(135deg, #667eea, #764ba2); 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  color: white; 
-  font-size: 2rem; 
-  font-weight: 700; 
-  flex-shrink: 0; 
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
-  border: 4px solid white;
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-  .candidate-avatar::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, #667eea, #764ba2, #667eea);
-    border-radius: 12px;
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-  .candidate-card:hover .candidate-avatar::after {
-    opacity: 1;
-  }
-  .candidate-card:hover .candidate-avatar {
-    transform: scale(1.05);
-    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.35);
-  }
-  .candidate-info { flex: 1; }
-  .candidate-name { 
-    font-size: 1.25rem; 
-    font-weight: 700; 
-    color: #1a202c; 
-    margin-bottom: 6px;
-    letter-spacing: -0.025em;
-    transition: color 0.3s;
-  }
-  .candidate-card:hover .candidate-name {
-    color: #667eea;
-  }
-  .candidate-bio { 
-    font-size: 0.95rem; 
-    color: #64748b; 
-    line-height: 1.6;
+  .ballot-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--slate-900);
     margin-bottom: 8px;
+    letter-spacing: -0.03em;
   }
-  .candidate-meta {
+  .ballot-instructions {
+    background: var(--amber-50);
+    border: 1px solid var(--amber-200);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 0.875rem;
+    color: var(--amber-700);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    line-height: 1.5;
+  }
+  .candidate-card {
+    border: 2px solid var(--slate-200);
+    border-radius: var(--radius-xl);
+    padding: 22px 24px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 12px;
+    gap: 22px;
+    background: var(--white);
+    position: relative;
+    box-shadow: var(--shadow-sm);
   }
-  .candidate-badge {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+  .candidate-card:hover {
+    border-color: var(--primary-400);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -4px rgba(99, 102, 241, 0.12);
+  }
+  .candidate-card.selected {
+    border-color: var(--primary-600);
+    background: linear-gradient(to right, var(--primary-50), #FFFFFF);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 12px 28px -4px rgba(99, 102, 241, 0.18);
+    transform: translateY(-2px);
+  }
+  .candidate-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: var(--radius-lg);
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: 2rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.2);
+    border: 3px solid white;
   }
-  .radio-circle { 
-    width: 28px; 
-    height: 28px; 
-    border-radius: 50%; 
-    border: 3px solid #e2e8f0; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    flex-shrink: 0; 
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  .candidate-info {
+    flex: 1;
+  }
+  .candidate-name {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--slate-900);
+    margin-bottom: 4px;
+  }
+  .candidate-card.selected .candidate-name {
+    color: var(--primary-700);
+  }
+  .candidate-bio {
+    font-size: 0.9rem;
+    color: var(--slate-500);
+    line-height: 1.5;
+  }
+  .radio-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--slate-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    background: var(--white);
+  }
+  .candidate-card.selected .radio-circle {
+    border-color: var(--primary-600);
+    background: var(--primary-600);
+  }
+  .radio-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
     background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-  .candidate-card:hover .radio-circle {
-    border-color: #667eea;
-    transform: scale(1.1);
-  }
-  .candidate-card.selected .radio-circle { 
-    border-color: #667eea; 
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
-    transform: scale(1.1);
-  }
-  .radio-dot { 
-    width: 12px; 
-    height: 12px; 
-    border-radius: 50%; 
-    background: white; 
     display: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
-  .candidate-card.selected .radio-dot { 
+  .candidate-card.selected .radio-dot {
     display: block;
-    animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    animation: popIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .ballot-footer { position: sticky; bottom: 0; background: white; border-top: 1px solid var(--gray-200); padding: 16px 0; margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end; }
-  .confirm-modal-text { background: var(--gray-50); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; font-size: .875rem; }
-  
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  
   @keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); opacity: 1; }
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+  }
+  .ballot-footer {
+    position: sticky;
+    bottom: 20px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-xl);
+    padding: 16px 24px;
+    margin-top: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.15);
+    z-index: 100;
   }
 </style>
 {% endblock %}
 
 {% block body %}
 <div class="ballot-wrapper">
-  {% if messages %}
-  <div class="messages-container">
-    {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
-  </div>
-  {% endif %}
-
+  
   <div class="ballot-header">
-    <span class="ballot-position">{{ election.position }}</span>
+    <span class="ballot-position-badge">Position: {{ election.position }}</span>
     <h1 class="ballot-title">{{ election.title }}</h1>
-    <p class="text-sm text-gray">Ends {{ election.end_date|date:"F j, Y \a\t H:i" }} UTC</p>
+    <p class="text-sm text-gray">Voting closes <strong>{{ election.end_date|date:"F j, Y \a\t H:i" }} UTC</strong></p>
   </div>
 
   <div class="ballot-instructions">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span>Select <strong>one candidate</strong> below, then click <strong>Submit Vote</strong>. Your vote is anonymous and cannot be changed after submission.</span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    <div>
+      <strong>Instructions:</strong> Select your preferred candidate from the list below and click <strong>Submit My Vote</strong>. Your vote is anonymized, cryptographically protected, and irreversible once cast.
+    </div>
   </div>
 
   <form method="post" id="ballotForm">
@@ -199,12 +179,9 @@
       <label class="candidate-card" id="card-{{ forloop.counter }}" onclick="selectCandidate(this, '{{ candidate.id }}')">
         <div class="candidate-avatar">
           {% if candidate.photo %}
-            <img src="{{ candidate.photo.url }}" alt="{{ candidate.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;border:3px solid white;box-shadow:0 4px 16px rgba(0,0,0,0.15);">
+            <img src="{{ candidate.photo.url }}" alt="{{ candidate.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg);">
           {% else %}
-            <div style="background:linear-gradient(135deg, #667eea, #764ba2);width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:2.2rem;font-weight:700;color:white;text-shadow:0 2px 4px rgba(0,0,0,0.3);position:relative;">
-              {{ candidate.name|first|upper }}
-              <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg, rgba(255,255,255,0.2), transparent);border-radius:8px;"></div>
-            </div>
+            <span>{{ candidate.name|first|upper }}</span>
           {% endif %}
         </div>
         <div class="candidate-info">
@@ -212,9 +189,6 @@
           {% if candidate.bio %}
           <div class="candidate-bio">{{ candidate.bio }}</div>
           {% endif %}
-          <div class="candidate-meta">
-            <span class="candidate-badge">Candidate</span>
-          </div>
         </div>
         <div class="radio-circle">
           <div class="radio-dot"></div>
@@ -222,15 +196,25 @@
         <input type="radio" name="candidate" value="{{ candidate.id }}" style="display:none;" required>
       </label>
       {% empty %}
-      <div class="empty-state"><p>No candidates have been added to this election yet.</p></div>
+      <div class="card">
+        <div class="empty-state">
+          <p>No candidates available in this election yet.</p>
+        </div>
+      </div>
       {% endfor %}
     </div>
 
+    <!-- Sticky Bottom Bar -->
     <div class="ballot-footer">
-      <a href="{% url 'elections:dashboard' %}" class="btn btn-secondary">← Back</a>
-      <button type="button" class="btn btn-primary" id="submitBtn" disabled onclick="openModal()">
-        Submit Vote
-      </button>
+      <a href="{% url 'elections:dashboard' %}" class="btn btn-secondary">
+        ← Cancel & Exit
+      </a>
+      <div class="flex items-center gap-3">
+        <span id="selectedStatusText" class="text-sm text-gray" style="font-style:italic;">No candidate selected</span>
+        <button type="button" class="btn btn-primary btn-lg" id="submitBtn" disabled onclick="openModal()">
+          Submit My Vote →
+        </button>
+      </div>
     </div>
 
     <!-- Confirmation Modal -->
@@ -238,16 +222,19 @@
       <div class="modal">
         <h3 class="modal-title">Confirm Your Vote</h3>
         <div class="modal-body">
-          <p>You are about to vote for:</p>
-          <div class="confirm-modal-text">
-            <strong id="selectedName">—</strong><br>
-            <span style="color:var(--gray-500);font-size:.8rem;">{{ election.position }} · {{ election.title }}</span>
+          <p style="margin-bottom:12px;">You are submitting your ballot for:</p>
+          <div style="background:var(--primary-50);border:1px solid var(--primary-200);border-radius:var(--radius);padding:16px;margin-bottom:18px;">
+            <div id="selectedName" style="font-family:var(--font-heading);font-size:1.3rem;font-weight:800;color:var(--primary-800);margin-bottom:4px;">—</div>
+            <div style="color:var(--slate-500);font-size:0.85rem;">{{ election.position }} · {{ election.title }}</div>
           </div>
-          <p style="color:#92400E;background:var(--yellow-light);padding:10px;border-radius:6px;font-size:.8rem;">⚠️ This action cannot be undone. Your vote is final.</p>
+          <div style="background:var(--amber-50);border:1px solid var(--amber-200);border-radius:var(--radius);padding:10px 14px;color:var(--amber-700);font-size:0.8rem;display:flex;align-items:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <span>This action cannot be undone. Your choice is final.</span>
+          </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Go Back</button>
-          <button type="submit" class="btn btn-primary">Yes, Submit Vote</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Review Choices</button>
+          <button type="submit" class="btn btn-primary">Confirm & Submit Vote</button>
         </div>
       </div>
     </div>
@@ -256,20 +243,33 @@
 
 <script>
   let selectedCandidateName = '';
+
   function selectCandidate(label, id) {
     document.querySelectorAll('.candidate-card').forEach(c => c.classList.remove('selected'));
     label.classList.add('selected');
-    label.querySelector('input[type=radio]').checked = true;
-    selectedCandidateName = label.querySelector('.candidate-name').textContent;
-    document.getElementById('submitBtn').disabled = false;
+    const radio = label.querySelector('input[type=radio]');
+    if (radio) radio.checked = true;
+    
+    selectedCandidateName = label.querySelector('.candidate-name').textContent.trim();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const statusText = document.getElementById('selectedStatusText');
+    if (submitBtn) submitBtn.disabled = false;
+    if (statusText) {
+      statusText.innerHTML = `Selected: <strong style="color:var(--primary-700);">${selectedCandidateName}</strong>`;
+      statusText.style.fontStyle = 'normal';
+    }
   }
+
   function openModal() {
     document.getElementById('selectedName').textContent = selectedCandidateName;
     document.getElementById('confirmModal').classList.add('open');
   }
+
   function closeModal() {
     document.getElementById('confirmModal').classList.remove('open');
   }
+
   document.getElementById('confirmModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
   });

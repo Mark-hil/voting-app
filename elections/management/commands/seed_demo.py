@@ -29,12 +29,12 @@ class Command(BaseCommand):
         # Voters
         voters = []
         voter_data = [
-            ('alice@example.com', 'Alice', 'Johnson'),
-            ('bob@example.com', 'Bob', 'Smith'),
-            ('carol@example.com', 'Carol', 'Williams'),
-            ('dave@example.com', 'Dave', 'Brown'),
+            ('alice@example.com', 'Alice', 'Johnson', 'ALICE123'),
+            ('bob@example.com', 'Bob', 'Smith', 'BOB12345'),
+            ('carol@example.com', 'Carol', 'Williams', 'CAROL123'),
+            ('dave@example.com', 'Dave', 'Brown', 'DAVE1234'),
         ]
-        for email, first, last in voter_data:
+        for email, first, last, code in voter_data:
             user, created = CustomUser.objects.get_or_create(
                 email=email,
                 defaults={
@@ -42,12 +42,15 @@ class Command(BaseCommand):
                     'first_name': first,
                     'last_name': last,
                     'role': 'voter',
+                    'unique_code': code,
                 }
             )
+            user.set_password('voter123')
+            if not user.unique_code:
+                user.unique_code = code
+            user.save()
             if created:
-                user.set_password('voter123')
-                user.save()
-                self.stdout.write(self.style.SUCCESS(f'✓ Voter: {email} / voter123'))
+                self.stdout.write(self.style.SUCCESS(f'✓ Voter: {email} / voter123 (Code: {user.unique_code})'))
             voters.append(user)
 
         # Election 1 — Active

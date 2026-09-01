@@ -1,187 +1,194 @@
 {% extends 'admin_panel/base_admin.html' %}
-{% block title %}Comprehensive Dashboard — VoteApp{% endblock %}
+{% block title %}Full Election Analytics — VoteApp Admin{% endblock %}
 
 {% block admin_content %}
-<div class="page-header" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:white;padding:2rem;margin:-2rem -2rem 2rem -2rem;border-radius:0 0 1rem 1rem;">
-  <div style="max-width:1400px;margin:0 auto;">
-    <h1 class="page-title" style="color:white;font-size:2rem;font-weight:700;margin-bottom:0.5rem;">Comprehensive Dashboard</h1>
-    <p class="page-subtitle" style="color:rgba(255,255,255,0.9);font-size:1.1rem;">Complete overview of all elections, candidates, and voting statistics</p>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Full Election Analytics</h1>
+    <p class="page-subtitle">Deep dive into voting distribution, candidate metrics, and turnout visualization.</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'admin_panel:election_create' %}" class="btn btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      Create Election
+    </a>
+    <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-secondary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Dashboard
+    </a>
   </div>
 </div>
 
 <!-- Overall Statistics -->
-<div class="grid-4 mb-8">
-  <div class="stat-card" style="background:white;border-radius:1rem;box-shadow:0 4px 6px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.1);border:none;padding:1.5rem;transition:transform 0.2s,box-shadow 0.2s;">
-    <div class="flex justify-between items-center mb-3">
-      <div class="stat-icon" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-      </div>
+<div class="grid-4 mb-6">
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ total_voters }}</div>
+      <div class="stat-label">Total Registered Voters</div>
     </div>
-    <div class="stat-value" style="font-size:2rem;font-weight:700;color:#1f2937;margin-bottom:0.25rem;">{{ total_voters }}</div>
-    <div class="stat-label" style="color:#6b7280;font-size:0.875rem;font-weight:500;letter-spacing:0.05em;">TOTAL VOTERS</div>
+    <div class="stat-icon" style="background:var(--primary-50);color:var(--primary-600);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+    </div>
   </div>
-  <div class="stat-card" style="background:white;border-radius:1rem;box-shadow:0 4px 6px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.1);border:none;padding:1.5rem;transition:transform 0.2s,box-shadow 0.2s;">
-    <div class="flex justify-between items-center mb-3">
-      <div class="stat-icon" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-      </div>
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ total_votes }}</div>
+      <div class="stat-label">Total Ballots Cast</div>
     </div>
-    <div class="stat-value" style="font-size:2rem;font-weight:700;color:#1f2937;margin-bottom:0.25rem;">{{ total_votes }}</div>
-    <div class="stat-label" style="color:#6b7280;font-size:0.875rem;font-weight:500;letter-spacing:0.05em;">TOTAL VOTES CAST</div>
+    <div class="stat-icon" style="background:var(--emerald-50);color:var(--emerald-600);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+    </div>
   </div>
-  <div class="stat-card" style="background:white;border-radius:1rem;box-shadow:0 4px 6px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.1);border:none;padding:1.5rem;transition:transform 0.2s,box-shadow 0.2s;">
-    <div class="flex justify-between items-center mb-3">
-      <div class="stat-icon" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
-      </div>
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ total_elections }}</div>
+      <div class="stat-label">Total Elections</div>
     </div>
-    <div class="stat-value" style="font-size:2rem;font-weight:700;color:#1f2937;margin-bottom:0.25rem;">{{ total_elections }}</div>
-    <div class="stat-label" style="color:#6b7280;font-size:0.875rem;font-weight:500;letter-spacing:0.05em;">TOTAL ELECTIONS</div>
+    <div class="stat-icon" style="background:var(--amber-50);color:var(--amber-600);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect></svg>
+    </div>
   </div>
-  <div class="stat-card" style="background:white;border-radius:1rem;box-shadow:0 4px 6px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.1);border:none;padding:1.5rem;transition:transform 0.2s,box-shadow 0.2s;">
-    <div class="flex justify-between items-center mb-3">
-      <div class="stat-icon" style="background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%);width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-value" style="color:var(--emerald-600);">{{ active_elections }}</div>
+      <div class="stat-label">Active Elections Now</div>
     </div>
-    <div class="stat-value" style="font-size:2rem;font-weight:700;color:#1f2937;margin-bottom:0.25rem;">{{ active_elections }}</div>
-    <div class="stat-label" style="color:#6b7280;font-size:0.875rem;font-weight:500;letter-spacing:0.05em;">ACTIVE NOW</div>
+    <div class="stat-icon" style="background:var(--emerald-50);color:var(--emerald-600);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+    </div>
   </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="card mb-8" style="background:white;border-radius:1rem;box-shadow:0 4px 6px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.1);border:none;">
-  <div class="card-header" style="background:#f9fafb;border-radius:1rem 1rem 0 0;border-bottom:1px solid #e5e7eb;padding:1.5rem;">
-    <span class="card-title" style="font-size:1.125rem;font-weight:600;color:#1f2937;">Quick Actions</span>
+<!-- Comprehensive Election Breakdown -->
+<div class="card mb-6">
+  <div class="card-header">
+    <span class="card-title">Election Visualizations & Breakdown</span>
+    <a href="{% url 'admin_panel:election_list' %}" class="btn btn-ghost btn-sm">All Elections →</a>
   </div>
-  <div class="card-body" style="padding:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;">
-    <a href="{% url 'admin_panel:election_create' %}" class="btn btn-primary" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border:none;border-radius:0.5rem;padding:0.75rem 1.5rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;transition:transform 0.2s,box-shadow 0.2s;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Create Election
-    </a>
-    <a href="{% url 'admin_panel:voter_invite' %}" class="btn btn-secondary" style="background:#f3f4f6;color:#374151;border:none;border-radius:0.5rem;padding:0.75rem 1.5rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;transition:transform 0.2s,box-shadow 0.2s;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-      Invite Voter
-    </a>
-    <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-secondary" style="background:#f3f4f6;color:#374151;border:none;border-radius:0.5rem;padding:0.75rem 1.5rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;transition:transform 0.2s,box-shadow 0.2s;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-      Back to Main Dashboard
-    </a>
-  </div>
-</div>
 
-<!-- Comprehensive Election Statistics -->
-<div class="card" style="background:white;border-radius:1rem;box-shadow:0 4px 6px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.1);border:none;">
-  <div class="card-header" style="background:#f9fafb;border-radius:1rem 1rem 0 0;border-bottom:1px solid #e5e7eb;padding:1.5rem;display:flex;justify-content:space-between;align-items:center;">
-    <span class="card-title" style="font-size:1.25rem;font-weight:600;color:#1f2937;">All Elections & Results</span>
-    <a href="{% url 'admin_panel:election_list' %}" class="btn btn-ghost btn-sm" style="color:#667eea;background:#f3f4f6;border:none;border-radius:0.375rem;padding:0.5rem 1rem;font-weight:500;transition:background 0.2s;">Manage Elections</a>
-  </div>
   {% if election_stats %}
-  <div style="padding:1.5rem;">
+  <div class="card-body" style="display:flex;flex-direction:column;gap:24px;">
     {% for stat in election_stats %}
-    <div class="card mb-6" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:0.75rem;overflow:hidden;transition:box-shadow 0.2s;">
-      <div class="card-header" style="background:linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);padding:1.5rem;border-bottom:1px solid #e5e7eb;">
-        <div class="flex justify-between items-center">
+    <div class="card" style="background:var(--white);border:1px solid var(--slate-200);box-shadow:var(--shadow-xs);">
+      <div class="card-header" style="background:var(--slate-50);">
+        <div class="flex justify-between items-center" style="width:100%;flex-wrap:wrap;gap:12px;">
           <div>
-            <h3 class="font-semibold text-xl" style="color:#1f2937;margin-bottom:0.25rem;">{{ stat.election.title }}</h3>
-            <p class="text-sm" style="color:#6b7280;">{{ stat.election.position }}</p>
+            <h3 style="font-size:1.15rem;font-weight:700;color:var(--slate-900);">{{ stat.election.title }}</h3>
+            <p style="font-size:0.875rem;color:var(--slate-500);margin-top:2px;">{{ stat.election.position }} · {{ stat.election.start_date|date:"M d, Y" }} – {{ stat.election.end_date|date:"M d, Y" }}</p>
           </div>
-          <div style="display:flex;gap:0.75rem;align-items:center;">
+          <div class="flex items-center gap-2">
             {% if stat.election.status == 'active' %}
-              <span class="badge" style="background:#dcfce7;color:#166534;padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;">● Active</span>
+              <span class="badge badge-green">● Active</span>
             {% elif stat.election.status == 'completed' %}
-              <span class="badge" style="background:#f3f4f6;color:#374151;padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;">Completed</span>
+              <span class="badge badge-gray">Completed</span>
             {% elif stat.election.status == 'draft' %}
-              <span class="badge" style="background:#fef3c7;color:#92400e;padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;">Draft</span>
+              <span class="badge badge-yellow">Draft</span>
             {% else %}
-              <span class="badge" style="background:#fee2e2;color:#991b1b;padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600;">Cancelled</span>
+              <span class="badge badge-red">{{ stat.election.get_status_display }}</span>
             {% endif %}
-            <a href="{% url 'admin_panel:election_manage' stat.election.id %}" class="btn btn-ghost btn-sm" style="color:#667eea;background:#f3f4f6;border:none;border-radius:0.375rem;padding:0.5rem 1rem;font-weight:500;transition:background 0.2s;">Manage</a>
+            <a href="{% url 'admin_panel:election_manage' stat.election.id %}" class="btn btn-secondary btn-sm">Manage</a>
+            <a href="{% url 'admin_panel:election_results' stat.election.id %}" class="btn btn-ghost btn-sm">Full Report</a>
           </div>
         </div>
       </div>
-      <div class="card-body" style="padding:1.5rem;">
-        <!-- Election Stats -->
+
+      <div class="card-body">
+        <!-- Metric Pills -->
         <div class="grid-4 mb-6">
-          <div class="text-center" style="background:#f8fafc;padding:1rem;border-radius:0.5rem;">
-            <div class="font-semibold text-2xl" style="color:#1f2937;margin-bottom:0.25rem;">{{ stat.total_votes }}</div>
-            <div class="text-xs" style="color:#6b7280;font-weight:500;letter-spacing:0.05em;">TOTAL VOTES</div>
+          <div class="p-3" style="background:var(--slate-50);border-radius:var(--radius);border:1px solid var(--slate-200);text-align:center;">
+            <div class="font-bold text-xl" style="color:var(--slate-900);">{{ stat.total_votes }}</div>
+            <div class="text-xs font-bold text-gray uppercase mt-1">Total Votes</div>
           </div>
-          <div class="text-center" style="background:#f8fafc;padding:1rem;border-radius:0.5rem;">
-            <div class="font-semibold text-2xl" style="color:#1f2937;margin-bottom:0.25rem;">{{ stat.total_eligible }}</div>
-            <div class="text-xs" style="color:#6b7280;font-weight:500;letter-spacing:0.05em;">ELIGIBLE VOTERS</div>
+          <div class="p-3" style="background:var(--slate-50);border-radius:var(--radius);border:1px solid var(--slate-200);text-align:center;">
+            <div class="font-bold text-xl" style="color:var(--slate-900);">{{ stat.total_eligible }}</div>
+            <div class="text-xs font-bold text-gray uppercase mt-1">Eligible Voters</div>
           </div>
-          <div class="text-center" style="background:#f8fafc;padding:1rem;border-radius:0.5rem;">
-            <div class="font-semibold text-2xl" style="color:#1f2937;margin-bottom:0.25rem;">{{ stat.participation_rate }}%</div>
-            <div class="text-xs" style="color:#6b7280;font-weight:500;letter-spacing:0.05em;">PARTICIPATION</div>
+          <div class="p-3" style="background:var(--slate-50);border-radius:var(--radius);border:1px solid var(--slate-200);text-align:center;">
+            <div class="font-bold text-xl" style="color:var(--primary-600);">{{ stat.participation_rate }}%</div>
+            <div class="text-xs font-bold text-gray uppercase mt-1">Participation</div>
           </div>
-          <div class="text-center" style="background:#f8fafc;padding:1rem;border-radius:0.5rem;">
-            <div class="font-semibold text-2xl" style="color:#1f2937;margin-bottom:0.25rem;">{{ stat.candidates|length }}</div>
-            <div class="text-xs" style="color:#6b7280;font-weight:500;letter-spacing:0.05em;">CANDIDATES</div>
+          <div class="p-3" style="background:var(--slate-50);border-radius:var(--radius);border:1px solid var(--slate-200);text-align:center;">
+            <div class="font-bold text-xl" style="color:var(--slate-900);">{{ stat.candidates|length }}</div>
+            <div class="text-xs font-bold text-gray uppercase mt-1">Candidates</div>
           </div>
         </div>
-        
-        <!-- Candidate Results -->
+
         {% if stat.candidates %}
+        <!-- Chart Controls & Views -->
         <div>
-          <div class="flex justify-between items-center mb-4">
-            <h4 class="font-semibold text-lg" style="color:#1f2937;">Candidate Results</h4>
+          <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <h4 style="font-size:0.95rem;font-weight:700;color:var(--slate-900);">Candidate Distribution</h4>
             <div class="flex gap-2">
-              <button onclick="toggleChartType('bar', '{{ stat.election.id }}')" class="chart-toggle-btn active" data-election="{{ stat.election.id }}" data-type="bar" style="padding:0.375rem 0.75rem;background:#667eea;color:white;border:none;border-radius:0.375rem;font-size:0.75rem;font-weight:500;cursor:pointer;">Bar Chart</button>
-              <button onclick="toggleChartType('pie', '{{ stat.election.id }}')" class="chart-toggle-btn" data-election="{{ stat.election.id }}" data-type="pie" style="padding:0.375rem 0.75rem;background:#f3f4f6;color:#374151;border:none;border-radius:0.375rem;font-size:0.75rem;font-weight:500;cursor:pointer;">Pie Chart</button>
-              <button onclick="toggleChartType('histogram', '{{ stat.election.id }}')" class="chart-toggle-btn" data-election="{{ stat.election.id }}" data-type="histogram" style="padding:0.375rem 0.75rem;background:#f3f4f6;color:#374151;border:none;border-radius:0.375rem;font-size:0.75rem;font-weight:500;cursor:pointer;">Histogram</button>
+              <button type="button" onclick="toggleChartType('bar', '{{ stat.election.id }}')" class="btn btn-primary btn-sm chart-btn-bar-{{ stat.election.id }}">
+                Bar View
+              </button>
+              <button type="button" onclick="toggleChartType('pie', '{{ stat.election.id }}')" class="btn btn-secondary btn-sm chart-btn-pie-{{ stat.election.id }}">
+                Donut / Pie
+              </button>
             </div>
           </div>
-          
+
           <!-- Bar Chart View -->
           <div id="bar-{{ stat.election.id }}" class="chart-view">
-            <div style="display:grid;gap:1rem;">
+            <div style="display:grid;gap:12px;">
               {% for candidate in stat.candidates %}
-              <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:#f8fafc;border-radius:0.5rem;border:1px solid #e2e8f0;transition:transform 0.2s,box-shadow 0.2s;">
+              <div style="background:var(--slate-50);padding:14px 18px;border-radius:var(--radius);border:1px solid var(--slate-200);display:flex;align-items:center;gap:16px;">
+                {% if candidate.photo %}
+                <img src="{{ candidate.photo.url }}" alt="{{ candidate.name }}" style="width:48px;height:48px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--slate-200);box-shadow:var(--shadow-xs);flex-shrink:0;">
+                {% else %}
+                <div style="width:48px;height:48px;border-radius:var(--radius);background:var(--primary-100);color:var(--primary-700);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0;">{{ candidate.name|first|upper }}</div>
+                {% endif %}
                 <div style="flex:1;min-width:0;">
-                  <div class="font-medium text-base" style="color:#1f2937;margin-bottom:0.5rem;">{{ candidate.name }}</div>
-                  <div class="progress-bar" style="height:16px;background:#e2e8f0;border-radius:8px;overflow:hidden;position:relative;">
-                    <div class="progress-fill" style="width:{{ candidate.percentage }}%;background:linear-gradient(90deg, #667eea 0%, #764ba2 100%);height:100%;transition:width 0.8s ease;border-radius:8px;position:relative;">
-                      <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:white;font-size:0.75rem;font-weight:600;white-space:nowrap;">{{ candidate.percentage }}%</span>
-                    </div>
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-bold text-sm" style="color:var(--slate-900);">{{ candidate.name }}</span>
+                    <span class="font-bold text-sm" style="color:var(--primary-600);">{{ candidate.percentage }}%</span>
+                  </div>
+                  <div class="progress-track" style="height:10px;background:var(--slate-200);border-radius:9999px;overflow:hidden;">
+                    <div class="progress-fill" style="width:{{ candidate.percentage }}%;background:var(--primary-gradient);height:100%;border-radius:9999px;transition:width .8s ease;"></div>
                   </div>
                 </div>
-                <div style="text-align:right;min-width:100px;">
-                  <div class="font-semibold text-lg" style="color:#1f2937;">{{ candidate.votes }}</div>
-                  <div class="text-sm" style="color:#6b7280;font-weight:500;">votes</div>
+                <div style="text-align:right;min-width:85px;">
+                  <div class="font-bold text-base" style="color:var(--slate-900);">{{ candidate.votes }}</div>
+                  <div class="text-xs text-gray">votes</div>
                 </div>
               </div>
               {% endfor %}
             </div>
           </div>
-          
+
           <!-- Pie Chart View -->
           <div id="pie-{{ stat.election.id }}" class="chart-view" style="display:none;">
-            <div style="display:flex;gap:2rem;align-items:flex-start;">
-              <div style="flex:1;">
-                <div class="pie-chart-container" id="pie-chart-{{ stat.election.id }}" style="position:relative;width:200px;height:200px;margin:0 auto;" 
+            <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;background:var(--slate-50);padding:24px;border-radius:var(--radius);border:1px solid var(--slate-200);">
+              <div style="flex:1;min-width:200px;text-align:center;">
+                <div class="pie-chart-container" id="pie-chart-{{ stat.election.id }}" style="position:relative;width:180px;height:180px;margin:0 auto;" 
                      data-candidates='[ 
                      {% for candidate in stat.candidates %}
                      {"name":"{{ candidate.name|escapejs }}","votes":{{ candidate.votes }},"percentage":{{ candidate.percentage }}}{% if not forloop.last %},{% endif %}
                      {% endfor %} ]'>
                   <svg viewBox="0 0 200 200" style="width:100%;height:100%;transform:rotate(-90deg);">
-                    <!-- Pie chart segments will be rendered by JavaScript -->
                   </svg>
-                  <!-- Center text -->
                   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);text-align:center;">
-                    <div style="font-size:1.5rem;font-weight:700;color:#1f2937;">{{ stat.total_votes }}</div>
-                    <div style="font-size:0.75rem;color:#6b7280;">Total Votes</div>
+                    <div class="font-bold text-xl" style="color:var(--slate-900);">{{ stat.total_votes }}</div>
+                    <div class="text-xs text-gray">Votes</div>
                   </div>
                 </div>
               </div>
-              <div style="flex:1;">
-                <div class="legend" style="display:grid;gap:0.75rem;">
+              <div style="flex:1.2;min-width:240px;">
+                <div style="display:grid;gap:12px;">
                   {% for candidate in stat.candidates %}
-                  <div class="legend-item" style="display:flex;align-items:center;gap:0.75rem;">
-                    <div class="legend-color" id="legend-color-{{ stat.election.id }}-{{ forloop.counter }}" style="width:16px;height:16px;border-radius:4px;background:{% cycle '#667eea' '#764ba2' '#10b981' '#f59e0b' '#ef4444' %};"></div>
-                    <div style="flex:1;">
-                      <div class="font-medium text-sm" style="color:#1f2937;">{{ candidate.name }}</div>
-                      <div class="text-xs" style="color:#6b7280;">{{ candidate.votes }} votes ({{ candidate.percentage }}%)</div>
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div id="legend-color-{{ stat.election.id }}-{{ forloop.counter }}" style="width:14px;height:14px;border-radius:4px;background:var(--primary-500);flex-shrink:0;"></div>
+                    {% if candidate.photo %}
+                    <img src="{{ candidate.photo.url }}" alt="{{ candidate.name }}" style="width:32px;height:32px;border-radius:var(--radius-sm);object-fit:cover;border:1px solid var(--slate-200);flex-shrink:0;">
+                    {% else %}
+                    <div style="width:32px;height:32px;border-radius:var(--radius-sm);background:var(--primary-100);color:var(--primary-700);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">{{ candidate.name|first|upper }}</div>
+                    {% endif %}
+                    <div class="flex justify-between items-center" style="width:100%;">
+                      <span class="font-medium text-sm" style="color:var(--slate-800);">{{ candidate.name }}</span>
+                      <span class="font-bold text-sm" style="color:var(--slate-600);">{{ candidate.votes }} ({{ candidate.percentage }}%)</span>
                     </div>
                   </div>
                   {% endfor %}
@@ -189,31 +196,10 @@
               </div>
             </div>
           </div>
-
-          <!-- Histogram View -->
-          <div id="histogram-{{ stat.election.id }}" class="chart-view" style="display:none;">
-            <div style="background:#f8fafc;border-radius:0.5rem;border:1px solid #e2e8f0;padding:1.5rem;">
-              <div class="histogram-chart" style="position:relative;height:200px;display:flex;align-items:flex-end;justify-content:space-around;gap:1rem;">
-                {% for candidate in stat.candidates %}
-                <div class="histogram-bar" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0.5rem;">
-                  <div class="bar-container" style="position:relative;width:100%;height:150px;display:flex;align-items:flex-end;">
-                    <div class="bar-fill" style="width:100%;background:linear-gradient(180deg, #667eea 0%, #764ba2 100%);border-radius:4px 4px 0 0;transition:height 0.8s ease;height:{{ candidate.percentage }}%;min-height:4px;position:relative;">
-                      <span class="bar-label" style="position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:0.75rem;font-weight:600;color:#1f2937;">{{ candidate.percentage }}%</span>
-                    </div>
-                  </div>
-                  <div class="bar-info" style="text-align:center;">
-                    <div class="candidate-name" style="font-size:0.875rem;font-weight:500;color:#1f2937;margin-bottom:0.25rem;">{{ candidate.name|truncatechars:15 }}</div>
-                    <div class="vote-count" style="font-size:0.75rem;color:#6b7280;">{{ candidate.votes }} votes</div>
-                  </div>
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
         </div>
         {% else %}
-        <div class="empty-state" style="padding:2rem;text-align:center;background:#f8fafc;border-radius:0.5rem;">
-          <p class="text-sm" style="color:#6b7280;">No candidates added yet.</p>
+        <div class="empty-state" style="padding:24px;">
+          <p class="text-sm text-gray">No candidates configured for this election yet.</p>
         </div>
         {% endif %}
       </div>
@@ -221,173 +207,82 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-state" style="padding:3rem;text-align:center;">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto 1rem;">
-      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-      <rect x="9" y="3" width="6" height="4" rx="1"/>
-    </svg>
-    <p style="color:#6b7280;font-size:1rem;">No elections created yet.</p>
+  <div class="empty-state" style="padding:48px;">
+    <p style="font-size:1.05rem;font-weight:600;color:var(--slate-600);">No elections created yet.</p>
+    <p class="text-sm text-gray mt-1">Get started by creating your first election.</p>
+    <a href="{% url 'admin_panel:election_create' %}" class="btn btn-primary mt-4">Create Election</a>
   </div>
   {% endif %}
 </div>
 
 <script>
-function toggleChartType(chartType, electionId) {
-  // Get all chart views for this election
-  const barChart = document.getElementById(`bar-${electionId}`);
-  const pieChart = document.getElementById(`pie-${electionId}`);
-  const histogramChart = document.getElementById(`histogram-${electionId}`);
-  
-  // Get all toggle buttons for this election
-  const buttons = document.querySelectorAll(`[data-election="${electionId}"]`);
-  
-  // Hide all charts
-  if (barChart) barChart.style.display = 'none';
-  if (pieChart) pieChart.style.display = 'none';
-  if (histogramChart) histogramChart.style.display = 'none';
-  
-  // Reset all buttons
-  buttons.forEach(btn => {
-    btn.style.background = '#f3f4f6';
-    btn.style.color = '#374151';
-  });
-  
-  // Show selected chart and activate button
-  if (chartType === 'bar') {
-    if (barChart) barChart.style.display = 'block';
-    if (buttons[0]) {
-      buttons[0].style.background = '#667eea';
-      buttons[0].style.color = 'white';
+function toggleChartType(type, electionId) {
+  const bar = document.getElementById(`bar-${electionId}`);
+  const pie = document.getElementById(`pie-${electionId}`);
+  const btnBar = document.querySelector(`.chart-btn-bar-${electionId}`);
+  const btnPie = document.querySelector(`.chart-btn-pie-${electionId}`);
+
+  if (type === 'bar') {
+    if (bar) bar.style.display = 'block';
+    if (pie) pie.style.display = 'none';
+    if (btnBar) { btnBar.className = 'btn btn-primary btn-sm chart-btn-bar-' + electionId; }
+    if (btnPie) { btnPie.className = 'btn btn-secondary btn-sm chart-btn-pie-' + electionId; }
+  } else {
+    if (bar) bar.style.display = 'none';
+    if (pie) {
+      pie.style.display = 'block';
+      setTimeout(renderPieCharts, 50);
     }
-  } else if (chartType === 'pie') {
-    if (pieChart) {
-      pieChart.style.display = 'block';
-      // Re-render pie chart when switching to it
-      setTimeout(() => renderPieCharts(), 100);
-    }
-    if (buttons[1]) {
-      buttons[1].style.background = '#667eea';
-      buttons[1].style.color = 'white';
-    }
-  } else if (chartType === 'histogram') {
-    if (histogramChart) histogramChart.style.display = 'block';
-    if (buttons[2]) {
-      buttons[2].style.background = '#667eea';
-      buttons[2].style.color = 'white';
-    }
+    if (btnBar) { btnBar.className = 'btn btn-secondary btn-sm chart-btn-bar-' + electionId; }
+    if (btnPie) { btnPie.className = 'btn btn-primary btn-sm chart-btn-pie-' + electionId; }
   }
 }
 
-// Render pie charts dynamically
 function renderPieCharts() {
-  const pieChartContainers = document.querySelectorAll('.pie-chart-container');
-  const colors = ['#667eea', '#764ba2', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-  
-  pieChartContainers.forEach(container => {
-    const electionId = container.id.replace('pie-chart-', '');
-    const candidatesData = container.getAttribute('data-candidates');
-    
-    console.log('Rendering pie chart for election:', electionId);
-    console.log('Candidates data:', candidatesData);
-    
-    if (!candidatesData) {
-      console.log('No candidates data found');
-      return;
-    }
-    
+  const pieContainers = document.querySelectorAll('.pie-chart-container');
+  const palette = ['#4F46E5', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6', '#06B6D4', '#EC4899', '#6366F1'];
+
+  pieContainers.forEach(container => {
+    const raw = container.getAttribute('data-candidates');
+    if (!raw) return;
     try {
-      // Clean up the data string first
-      let cleanData = candidatesData.trim();
-      if (cleanData.startsWith('[') && cleanData.endsWith(']')) {
-        cleanData = cleanData.substring(1, cleanData.length - 1);
-      }
-      
-      const candidates = JSON.parse('[' + cleanData + ']');
-      console.log('Parsed candidates:', candidates);
+      const candidates = JSON.parse(raw);
       const svg = container.querySelector('svg');
-      
-      if (!svg) {
-        console.log('No SVG found');
-        return;
-      }
-      
-      // Clear existing circles
+      if (!svg) return;
       svg.innerHTML = '';
-      
-      // Calculate cumulative percentages for positioning
-      let cumulativePercentage = 0;
-      
-      candidates.forEach((candidate, index) => {
-        const percentage = candidate.percentage;
-        const color = colors[index % colors.length];
+
+      let cumulative = 0;
+      const electionId = container.id.replace('pie-chart-', '');
+
+      candidates.forEach((c, idx) => {
+        const color = palette[idx % palette.length];
+        const pct = c.percentage;
         
-        console.log(`Creating segment for ${candidate.name}: ${percentage}% with color ${color}`);
-        
-        // Create circle element
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', '100');
         circle.setAttribute('cy', '100');
-        circle.setAttribute('r', '80');
+        circle.setAttribute('r', '75');
         circle.setAttribute('fill', 'none');
         circle.setAttribute('stroke', color);
-        circle.setAttribute('stroke-width', '40');
-        circle.setAttribute('stroke-dasharray', `${percentage} ${100 - percentage}`);
-        circle.setAttribute('stroke-dashoffset', `-${cumulativePercentage}`);
+        circle.setAttribute('stroke-width', '30');
+        circle.setAttribute('stroke-dasharray', `${pct} ${100 - pct}`);
+        circle.setAttribute('stroke-dashoffset', `-${cumulative}`);
         circle.style.transition = 'stroke-dasharray 0.8s ease';
-        
         svg.appendChild(circle);
-        
-        // Update legend color
-        const legendColor = document.getElementById(`legend-color-${electionId}-${index + 1}`);
-        if (legendColor) {
-          legendColor.style.background = color;
-        }
-        
-        cumulativePercentage += percentage;
+
+        const leg = document.getElementById(`legend-color-${electionId}-${idx + 1}`);
+        if (leg) leg.style.background = color;
+
+        cumulative += pct;
       });
-    } catch (e) {
-      console.error('Error parsing candidate data:', e);
-      console.error('Raw data:', candidatesData);
+    } catch(e) {
+      console.error(e);
     }
   });
 }
 
-// Animate progress bars on page load
-document.addEventListener('DOMContentLoaded', function() {
-  // Render pie charts
+document.addEventListener('DOMContentLoaded', () => {
   renderPieCharts();
-  
-  // Animate bar chart progress fills
-  const progressFills = document.querySelectorAll('.progress-fill');
-  progressFills.forEach(fill => {
-    const width = fill.style.width;
-    fill.style.width = '0%';
-    setTimeout(() => {
-      fill.style.width = width;
-    }, 100);
-  });
-  
-  // Animate histogram bars
-  const histogramBars = document.querySelectorAll('.bar-fill');
-  histogramBars.forEach(bar => {
-    const height = bar.style.height;
-    bar.style.height = '0%';
-    setTimeout(() => {
-      bar.style.height = height;
-    }, 200);
-  });
-  
-  // Animate stat cards
-  const statCards = document.querySelectorAll('.stat-card');
-  statCards.forEach((card, index) => {
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(20px)';
-    setTimeout(() => {
-      card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-      card.style.opacity = '1';
-      card.style.transform = 'translateY(0)';
-    }, index * 100);
-  });
 });
 </script>
 {% endblock %}

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Count, Q
-import csv, json
+import csv, json, zipfile
 import secrets
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
@@ -13,7 +13,8 @@ from accounts.models import CustomUser
 from .forms import ElectionForm, CandidateForm, VoterInviteForm, VoterImportForm
 from .decorators import admin_required
 from .security import admin_rate_limit
-from io import TextIOWrapper
+from io import BytesIO, StringIO, TextIOWrapper
+from django.core.management import call_command
 
 
 @login_required
@@ -49,9 +50,12 @@ def comprehensive_dashboard(request):
         candidates_data = []
         for candidate in election.candidates.all():
             candidates_data.append({
+                'candidate': candidate,
                 'name': candidate.name,
                 'votes': candidate.vote_count,
                 'percentage': candidate.vote_percentage,
+                'photo': candidate.photo,
+                'bio': candidate.bio,
             })
         candidates_data.sort(key=lambda x: x['votes'], reverse=True)
         
@@ -82,8 +86,28 @@ def comprehensive_dashboard(request):
 @login_required
 @admin_required
 def election_list(request):
-    elections = Election.objects.annotate(vote_count=Count('votes')).order_by('-created_at')
-    return render(request, 'admin_panel/election_list.html', {'elections': elections})
+    status_filter = request.GET.get('status', '').strip()
+    elections = Election.objects.annotate(vote_count=Count('votes'))
+    
+    if status_filter in ['active', 'completed', 'draft', 'cancelled']:
+        elections = elections.filter(status=status_filter)
+        
+    elections = elections.order_by('-created_at')
+
+    total_count = Election.objects.count()
+    active_count = Election.objects.filter(status='active').count()
+    completed_count = Election.objects.filter(status='completed').count()
+    draft_count = Election.objects.filter(status='draft').count()
+
+    context = {
+        'elections': elections,
+        'status_filter': status_filter,
+        'total_count': total_count,
+        'active_count': active_count,
+        'completed_count': completed_count,
+        'draft_count': draft_count,
+    }
+    return render(request, 'admin_panel/election_list.html', context)
 
 
 @login_required
@@ -118,6 +142,11 @@ def election_manage(request, election_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
+
+        # Safeguard: disallow modifying candidates/settings when election is completed
+        if election.status == 'completed' and action in ['update_election', 'add_candidate', 'delete_candidate']:
+            messages.error(request, 'This election is marked as Completed. Changes to candidates or configuration are locked to preserve audit integrity. Re-open to Draft or Active if changes are needed.')
+            return redirect('admin_panel:election_manage', election_id=election.id)
 
         if action == 'update_election':
             form = ElectionForm(request.POST, instance=election)
@@ -311,9 +340,10 @@ def voter_invite(request):
     if request.method == 'POST':
         form = VoterInviteForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data['email']
-            first_name = form.cleaned_data['first_name']
-            last_name = form.cleaned_data['last_name']
+            email = form.cleaned_data['email'].strip().lower()
+            first_name = form.cleaned_data['first_name'].strip()
+            last_name = form.cleaned_data['last_name'].strip()
+            unique_code = secrets.token_urlsafe(8).upper()
 
             user, created = CustomUser.objects.get_or_create(
                 email=email,
@@ -322,12 +352,16 @@ def voter_invite(request):
                     'first_name': first_name,
                     'last_name': last_name,
                     'role': 'voter',
+                    'unique_code': unique_code,
                 }
             )
             if created:
-                messages.success(request, f'Voter {email} added successfully!')
+                messages.success(request, f'Voter {email} added successfully! Login code: {user.unique_code}')
             else:
-                messages.warning(request, f'User with email {email} already exists.')
+                if not user.unique_code:
+                    user.unique_code = unique_code
+                    user.save()
+                messages.warning(request, f'User with email {email} already exists (Login code: {user.unique_code}).')
             return redirect('admin_panel:voter_list')
     else:
         form = VoterInviteForm()
@@ -444,3 +478,202 @@ def voter_import(request):
         form = VoterImportForm()
     
     return render(request, 'admin_panel/voter_import.html', {'form': form})
+
+
+@login_required
+@admin_required
+def export_election_audit_pack(request, election_id):
+    """
+    Generates a full audit & archive package as a downloadable ZIP.
+    Contains official results, voter participation list, anonymized ballot receipts,
+    and a complete election summary JSON.
+    """
+    election = get_object_or_404(Election, id=election_id)
+    candidates = election.candidates.all()
+    
+    # 1. Official Results CSV
+    results_io = StringIO()
+    results_writer = csv.writer(results_io)
+    results_writer.writerow(['Rank', 'Candidate Name', 'Votes Received', 'Vote Percentage', 'Bio'])
+    
+    results_data = []
+    for candidate in candidates:
+        results_data.append({
+            'name': candidate.name,
+            'bio': candidate.bio,
+            'votes': candidate.vote_count,
+            'percentage': candidate.vote_percentage,
+        })
+    results_data.sort(key=lambda x: x['votes'], reverse=True)
+    
+    for i, r in enumerate(results_data, 1):
+        results_writer.writerow([i, r['name'], r['votes'], f"{r['percentage']}%", r['bio']])
+        
+    # 2. Voter Turnout CSV
+    voter_io = StringIO()
+    voter_writer = csv.writer(voter_io)
+    voter_writer.writerow(['Voter Name', 'Username', 'Email', 'Voting Status', 'Registered Date'])
+    for voter in election.eligible_voters.all().order_by('username'):
+        has_voted = Vote.objects.filter(election=election, voter=voter).exists()
+        voter_writer.writerow([
+            voter.get_full_name() or voter.username,
+            voter.username,
+            voter.email or '',
+            'Voted' if has_voted else 'Not Voted',
+            voter.date_joined.strftime('%Y-%m-%d %H:%M:%S') if voter.date_joined else ''
+        ])
+        
+    # 3. Ballot Receipts Audit CSV (Anonymized vote verification)
+    receipts_io = StringIO()
+    receipts_writer = csv.writer(receipts_io)
+    receipts_writer.writerow(['Ballot Reference ID', 'Timestamp Cast (UTC)', 'IP Address (Audit)'])
+    for vote in election.votes.all().order_by('cast_at'):
+        receipts_writer.writerow([
+            vote.reference_id,
+            vote.cast_at.strftime('%Y-%m-%d %H:%M:%S'),
+            vote.ip_address or 'N/A'
+        ])
+        
+    # 4. Election Summary JSON
+    summary_data = {
+        'election_id': str(election.id),
+        'title': election.title,
+        'position': election.position,
+        'status': election.status,
+        'voting_type': election.get_voting_type_display(),
+        'start_date': election.start_date.isoformat(),
+        'end_date': election.end_date.isoformat(),
+        'created_by': election.created_by.get_full_name() if election.created_by else 'N/A',
+        'total_eligible_voters': election.total_eligible,
+        'total_votes_cast': election.total_votes,
+        'turnout_percentage': f"{election.participation_rate}%",
+        'exported_at': timezone.now().isoformat(),
+        'results': results_data,
+    }
+    
+    # Pack into In-Memory ZIP file
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.writestr('official_results.csv', results_io.getvalue())
+        zip_file.writestr('voter_turnout.csv', voter_io.getvalue())
+        zip_file.writestr('ballot_receipts_audit.csv', receipts_io.getvalue())
+        zip_file.writestr('election_summary.json', json.dumps(summary_data, indent=2))
+        
+    zip_buffer.seek(0)
+    response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+    sanitized_title = "".join(c for c in election.title if c.isalnum() or c in (' ', '_', '-')).rstrip().replace(' ', '_')
+    response['Content-Disposition'] = f'attachment; filename="audit_pack_{sanitized_title}_{election.id}.zip"'
+    return response
+
+
+@login_required
+@admin_required
+def reset_voter_codes(request):
+    """
+    Clears or regenerates unique login codes for voters between election cycles.
+    """
+    if request.method == 'POST':
+        action_type = request.POST.get('reset_type', 'clear')  # 'clear' or 'regenerate'
+        target = request.POST.get('target', 'all')  # 'all' or 'voted'
+        
+        voters = CustomUser.objects.filter(role='voter')
+        if target == 'voted':
+            voters = voters.filter(votes__isnull=False).distinct()
+            
+        count = voters.count()
+        if action_type == 'clear':
+            voters.update(unique_code=None)
+            messages.success(request, f'Successfully cleared login codes for {count} voter(s).')
+        elif action_type == 'regenerate':
+            updated = 0
+            for v in voters:
+                v.unique_code = secrets.token_urlsafe(8).upper()
+                v.save(update_fields=['unique_code'])
+                updated += 1
+            messages.success(request, f'Successfully generated fresh login codes for {updated} voter(s).')
+            
+        return redirect('admin_panel:voter_list')
+    
+    return redirect('admin_panel:voter_list')
+
+
+@login_required
+@admin_required
+def system_maintenance(request):
+    """
+    Admin system maintenance and clean-up control center:
+    - Download full database JSON backup
+    - Clear expired Django sessions
+    - Reset voter login codes
+    - Total System Wipe / Clean Slate (Danger Zone)
+    """
+    total_elections = Election.objects.count()
+    total_votes = Vote.objects.count()
+    total_candidates = Candidate.objects.count()
+    total_voters = CustomUser.objects.filter(role='voter').count()
+    active_elections_count = Election.objects.filter(status='active').count()
+    completed_elections_count = Election.objects.filter(status='completed').count()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'export_backup':
+            # Export full database JSON dump
+            buf = StringIO()
+            call_command('dumpdata', '--natural-foreign', '--natural-primary', '-e', 'contenttypes', '-e', 'auth.Permission', indent=2, stdout=buf)
+            
+            response = HttpResponse(buf.getvalue(), content_type='application/json')
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            response['Content-Disposition'] = f'attachment; filename="voteapp_backup_{timestamp}.json"'
+            return response
+            
+        elif action == 'clear_sessions':
+            call_command('clearsessions')
+            messages.success(request, 'Expired user sessions have been purged successfully.')
+            return redirect('admin_panel:system_maintenance')
+            
+        elif action == 'wipe_data':
+            confirmation = request.POST.get('confirmation', '').strip()
+            wipe_type = request.POST.get('wipe_type', 'votes_only')
+            
+            if confirmation != 'RESET':
+                messages.error(request, 'Confirmation text mismatch. You must type "RESET" in capital letters to proceed.')
+                return redirect('admin_panel:system_maintenance')
+                
+            if wipe_type == 'votes_only':
+                deleted_votes, _ = Vote.objects.all().delete()
+                messages.success(request, f'All ballot votes ({deleted_votes} records) have been wiped completely. Elections, candidates, and voters remain intact.')
+            elif wipe_type == 'full_wipe':
+                deleted_votes, _ = Vote.objects.all().delete()
+                
+                # Delete candidate photos from storage
+                for c in Candidate.objects.all():
+                    if c.photo:
+                        try:
+                            c.photo.delete(save=False)
+                        except Exception:
+                            pass
+                deleted_candidates, _ = Candidate.objects.all().delete()
+                deleted_elections, _ = Election.objects.all().delete()
+                
+                # Delete non-admin voter accounts
+                deleted_voters, _ = CustomUser.objects.filter(role='voter', is_staff=False, is_superuser=False).delete()
+                
+                # Clear sessions
+                call_command('clearsessions')
+                
+                messages.success(request, f'System wiped to clean slate: {deleted_votes} votes, {deleted_candidates} candidates, {deleted_elections} elections, and {deleted_voters} voter accounts deleted.')
+                
+            return redirect('admin_panel:system_maintenance')
+            
+    context = {
+        'total_elections': total_elections,
+        'total_votes': total_votes,
+        'total_candidates': total_candidates,
+        'total_voters': total_voters,
+        'active_elections_count': active_elections_count,
+        'completed_elections_count': completed_elections_count,
+        'elections': Election.objects.all().order_by('-created_at')[:10],
+    }
+    return render(request, 'admin_panel/system_maintenance.html', context)
+
