@@ -8,7 +8,15 @@ from elections.models import Election, Candidate
 class Command(BaseCommand):
     help = 'Seed demo data: admin, voters, and sample elections'
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--roles-only',
+            action='store_true',
+            help='Seed only the administrative and staff roles without demo voters or elections',
+        )
+
+    def handle(self, *args, **options):
+        roles_only = options.get('roles_only', False)
         self.stdout.write('Seeding demo data with RBAC roles...')
 
         # 1. System Administrator
@@ -78,9 +86,17 @@ class Command(BaseCommand):
         auditor.role = 'auditor'
         auditor.is_staff = True
         auditor.set_password('auditor123')
-        auditor.save()
         if created:
             self.stdout.write(self.style.SUCCESS('✓ Election Auditor: auditor@voteapp.com / auditor123'))
+
+        if roles_only:
+            self.stdout.write(self.style.SUCCESS('\n✅ Administrative & staff roles seeded successfully! (Voters and elections skipped)'))
+            self.stdout.write('\nStaff Login Credentials:')
+            self.stdout.write('  1. System Admin:           admin@voteapp.com        / admin123     → /admin-panel/')
+            self.stdout.write('  2. Electoral Commissioner: commissioner@voteapp.com / officer123   → /admin-panel/')
+            self.stdout.write('  3. Voter Registrar:        registrar@voteapp.com    / registrar123 → /admin-panel/')
+            self.stdout.write('  4. Election Auditor:       auditor@voteapp.com      / auditor123   → /admin-panel/')
+            return
 
         # 5. Voters
         voters = []

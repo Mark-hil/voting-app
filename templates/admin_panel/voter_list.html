@@ -8,6 +8,10 @@
     <p class="page-subtitle">{{ voters_data|length }} registered voter{{ voters_data|length|pluralize }} in the system.</p>
   </div>
   <div class="flex gap-2" style="flex-wrap:wrap;">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('bulkSmsModal').style.display='flex'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      📱 Broadcast SMS
+    </button>
     <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('resetCodesModal').style.display='flex'">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
       Reset Voter Codes
@@ -57,10 +61,12 @@
           <th>Voter</th>
           <th>Username / Index</th>
           <th>Login Voter Code</th>
+          <th>Phone (SMS)</th>
           <th>Email</th>
           <th>Status</th>
           <th>Joined</th>
           <th>Votes Cast</th>
+          <th style="text-align:right;">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -89,6 +95,13 @@
             <span class="text-gray text-xs">Standard Password</span>
             {% endif %}
           </td>
+          <td>
+            {% if vd.voter.phone %}
+            <span class="text-sm font-semibold" style="color:var(--slate-800);">{{ vd.voter.phone }}</span>
+            {% else %}
+            <span class="text-gray text-xs">—</span>
+            {% endif %}
+          </td>
           <td class="text-gray text-sm">{{ vd.voter.email|default:"—" }}</td>
           <td>
             {% if vd.has_voted %}
@@ -99,6 +112,18 @@
           </td>
           <td class="text-sm text-gray">{{ vd.voter.date_joined|date:"M d, Y" }}</td>
           <td class="font-bold">{{ vd.voter.votes.count }}</td>
+          <td style="text-align:right;">
+            {% if vd.voter.phone %}
+            <form method="post" action="{% url 'admin_panel:voter_send_sms' vd.voter.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary btn-sm" style="padding:4px 9px;font-size:0.75rem;" title="Send/Resend unique code to {{ vd.voter.phone }} via SMS">
+                💬 SMS Code
+              </button>
+            </form>
+            {% else %}
+            <span class="text-xs text-gray" title="No phone number recorded">No phone</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -110,6 +135,41 @@
     <p>No voters found matching your criteria. <a href="{% url 'admin_panel:voter_invite' %}" style="color:var(--primary-600);font-weight:600;">Invite a voter →</a></p>
   </div>
   {% endif %}
+</div>
+
+<!-- Bulk SMS Broadcast Modal -->
+<div id="bulkSmsModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="width:100%;max-width:480px;background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-xl);">
+    <div class="card-header flex justify-between items-center" style="border-bottom:1px solid var(--slate-100);">
+      <span class="card-title">📱 Broadcast SMS</span>
+      <button type="button" onclick="document.getElementById('bulkSmsModal').style.display='none'" class="btn btn-ghost btn-sm" style="font-size:1.2rem;line-height:1;padding:0 6px;">&times;</button>
+    </div>
+    <div class="card-body">
+      <p class="text-sm text-gray mb-3">
+        Send individualized SMS text messages with unique voter codes directly to voters' mobile phones.
+      </p>
+      <form method="post" action="{% url 'admin_panel:voter_bulk_send_sms' %}">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+          <label class="form-label" style="font-size:0.8rem;">Target Audience</label>
+          <select name="target" class="form-input">
+            <option value="all">All Registered Voters with Phone Numbers ({{ voters_data|length }} total)</option>
+            <option value="unvoted">Only Unvoted Voters (Turnout Reminder)</option>
+          </select>
+        </div>
+        <div class="mb-4" style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:12px 14px;">
+          <div class="text-xs font-bold text-gray uppercase mb-1">SMS Template Preview:</div>
+          <div style="font-size:0.82rem;color:var(--slate-700);line-height:1.45;">
+            <em>"Hello [Voter Name], your unique login code for VoteApp is: <strong>[CODE]</strong>. Cast your ballot at https://voting-app-wvk6.onrender.com/accounts/login/. Do not share this code."</em>
+          </div>
+        </div>
+        <div class="flex justify-between items-center">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('bulkSmsModal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">🚀 Send SMS Broadcast</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- Reset Voter Codes Modal -->

@@ -335,4 +335,59 @@ class AdminPanelTests(TestCase):
         self.assertEqual(dash_resp.status_code, 302)
         self.assertEqual(dash_resp.url, reverse('elections:dashboard'))
 
+    def test_voter_invite_with_phone_and_sms(self):
+        url = reverse('admin_panel:voter_invite')
+        resp = self.client.post(url, {
+            'first_name': 'Kwame',
+            'last_name': 'Mensah',
+            'email': 'kwame@test.com',
+            'phone': '0241234567',
+            'send_sms': 'on',
+        })
+        self.assertEqual(resp.status_code, 302)
+        user = CustomUser.objects.get(email='kwame@test.com')
+        self.assertEqual(user.phone, '0241234567')
+        self.assertTrue(bool(user.unique_code))
+
+    def test_voter_send_sms_endpoint(self):
+        voter = CustomUser.objects.create_user(
+            username='smsvoter@test.com',
+            email='smsvoter@test.com',
+            phone='0241234567',
+            role='voter',
+            unique_code='SMSVOTER1'
+        )
+        url = reverse('admin_panel:voter_send_sms', args=[voter.id])
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, 302)
+        self.assertRedirects(resp, reverse('admin_panel:voter_list'))
+
+    def test_voter_bulk_send_sms_endpoint(self):
+        url = reverse('admin_panel:voter_bulk_send_sms')
+        resp = self.client.post(url, {'target': 'all'})
+        self.assertEqual(resp.status_code, 302)
+        self.assertRedirects(resp, reverse('admin_panel:voter_list'))
+
+        resp_unvoted = self.client.post(url, {'target': 'unvoted'})
+        self.assertEqual(resp_unvoted.status_code, 302)
+        self.assertRedirects(resp_unvoted, reverse('admin_panel:voter_list'))
+
+    def test_voter_import_with_phone_csv(self):
+        csv_content = "name,index,phone\nAkosua Boateng,ENG2024001,0249876543\nKofi Annan,ENG2024002,0501122334"
+        csv_file = SimpleUploadedFile("voters.csv", csv_content.encode('utf-8'), content_type="text/csv")
+        
+        url = reverse('admin_panel:voter_import')
+        resp = self.client.post(url, {'csv_file': csv_file, 'send_sms': 'on'})
+        self.assertEqual(resp.status_code, 302)
+
+        user1 = CustomUser.objects.get(phone='0249876543')
+        self.assertEqual(user1.first_name, 'Akosua')
+        self.assertEqual(user1.role, 'voter')
+        self.assertTrue(bool(user1.unique_code))
+
+        user2 = CustomUser.objects.get(phone='0501122334')
+        self.assertEqual(user2.first_name, 'Kofi')
+        self.assertTrue(bool(user2.unique_code))
+
+
 

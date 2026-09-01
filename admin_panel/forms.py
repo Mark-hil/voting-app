@@ -137,14 +137,31 @@ class VoterInviteForm(forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'class': 'form-input', 'placeholder': 'voter@example.com'})
     )
+    phone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'e.g. 024XXXXXXX or +233...'})
+    )
+    send_sms = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Send Login Code via SMS immediately",
+        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'})
+    )
 
 
 class VoterImportForm(forms.Form):
     csv_file = forms.FileField(
         label='CSV File',
-        help_text='Upload a CSV file with columns: name,index OR "STUDENT\'S NAME","INDEX NUMBER"',
+        help_text='Upload a CSV file with columns: name, index, phone (optional) OR "STUDENT\'S NAME", "INDEX NUMBER", "PHONE NUMBER"',
         widget=forms.FileInput(attrs={'class': 'form-input', 'accept': '.csv'}),
         validators=[
             FileExtensionValidator(allowed_extensions=['csv'])
         ]
+    )
+    send_sms = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Send unique login codes via SMS to imported voters with valid phone numbers",
+        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'})
     )

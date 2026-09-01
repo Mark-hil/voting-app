@@ -76,46 +76,6 @@
     font-size: 0.9rem;
     margin-bottom: 28px;
   }
-  .demo-chips-container {
-    background: var(--slate-50);
-    border: 1px solid var(--slate-200);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    margin-bottom: 22px;
-  }
-  .demo-chips-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--slate-400);
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .demo-chips-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .demo-chip {
-    background: var(--white);
-    border: 1px solid var(--slate-200);
-    padding: 4px 10px;
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--slate-700);
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-  .demo-chip:hover {
-    background: var(--primary-50);
-    color: var(--primary-700);
-    border-color: var(--primary-200);
-    transform: translateY(-1px);
-  }
   .security-footer {
     display: flex;
     align-items: center;
@@ -124,6 +84,30 @@
     margin-top: 24px;
     color: var(--slate-400);
     font-size: 0.78rem;
+  }
+
+  @media (max-width: 480px) {
+    .auth-wrapper {
+      padding: 16px 12px;
+    }
+    .auth-card {
+      padding: 28px 18px;
+      border-radius: var(--radius-lg);
+    }
+    .auth-logo-icon {
+      width: 40px;
+      height: 40px;
+    }
+    .auth-logo-text {
+      font-size: 1.35rem;
+    }
+    .auth-heading {
+      font-size: 1.25rem;
+    }
+    .auth-subheading {
+      font-size: 0.82rem;
+      margin-bottom: 20px;
+    }
   }
 </style>
 {% endblock %}
@@ -143,19 +127,6 @@
 
     <h1 class="auth-heading">Sign in to Vote</h1>
     <p class="auth-subheading">Enter your credentials or unique voter code</p>
-
-    <!-- Demo Quick-Fill Helpers -->
-    <div class="demo-chips-container">
-      <div class="demo-chips-title">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-        Quick Demo Autofill
-      </div>
-      <div class="demo-chips-list">
-        <button type="button" class="demo-chip" onclick="fillCredentials('admin@voteapp.com', 'admin123')">🔑 Admin</button>
-        <button type="button" class="demo-chip" onclick="fillCredentials('alice@example.com', 'voter123')">🗳️ Voter (Password)</button>
-        <button type="button" class="demo-chip" onclick="fillCredentials('alice@example.com', 'ALICE123')">🎫 Voter (Code)</button>
-      </div>
-    </div>
 
     <form method="post" action="{% url 'accounts:login' %}" id="loginForm">
       {% csrf_token %}
@@ -203,13 +174,6 @@
 </div>
 
 <script>
-  function fillCredentials(user, code) {
-    const userInput = document.getElementById('id_username');
-    const codeInput = document.getElementById('id_unique_code');
-    if (userInput) userInput.value = user;
-    if (codeInput) codeInput.value = code;
-  }
-
   function togglePasswordVisibility() {
     const codeInput = document.getElementById('id_unique_code');
     if (codeInput) {

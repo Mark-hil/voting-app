@@ -36,7 +36,14 @@
               <div class="form-error">{{ error }}</div>
             {% endfor %}
           {% endif %}
-          <div class="form-hint">Accepted file type: <code>.csv</code></div>
+          <div class="form-hint">Accepted file type: <code>.csv</code> (Columns: Name, Index/ID, and optional Phone)</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:18px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.9rem;font-weight:600;color:var(--slate-800);">
+            {{ form.send_sms }}
+            <span>📱 Broadcast unique login codes via SMS to voters with phone numbers</span>
+          </label>
         </div>
 
         <div class="flex gap-3" style="margin-top:24px;">
@@ -56,21 +63,21 @@
       <p class="text-sm text-gray mb-3">Ensure your CSV header contains one of the following supported column structures:</p>
       
       <div class="mb-4">
-        <div class="text-xs font-bold text-gray uppercase mb-1">Standard Format</div>
-        <pre style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:10px 14px;font-family:monospace;font-size:0.8rem;color:var(--slate-800);">name,index
-John Doe,NMCSMRGN230001
-Jane Smith,NMCSMRGN230002</pre>
+        <div class="text-xs font-bold text-gray uppercase mb-1">Standard Format with Phone (Recommended for SMS)</div>
+        <pre style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:10px 14px;font-family:monospace;font-size:0.8rem;color:var(--slate-800);">name,index,phone
+John Doe,NMCSMRGN230001,0241234567
+Jane Smith,NMCSMRGN230002,0509876543</pre>
       </div>
 
       <div class="mb-4">
         <div class="text-xs font-bold text-gray uppercase mb-1">Student / Official Format</div>
-        <pre style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:10px 14px;font-family:monospace;font-size:0.8rem;color:var(--slate-800);">STUDENT'S NAME,INDEX NUMBER
-John Doe,NMCSMRGN230001
-Jane Smith,NMCSMRGN230002</pre>
+        <pre style="background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:10px 14px;font-family:monospace;font-size:0.8rem;color:var(--slate-800);">STUDENT'S NAME,INDEX NUMBER,PHONE NUMBER
+John Doe,NMCSMRGN230001,0241234567
+Jane Smith,NMCSMRGN230002,0509876543</pre>
       </div>
 
       <div style="background:var(--primary-50);border:1px solid var(--primary-100);border-radius:var(--radius);padding:12px 14px;font-size:0.8rem;color:var(--primary-800);">
-        💡 Each imported user automatically receives a unique 8-character code and voter role.
+        💡 Each imported user automatically receives a unique 8-character code and voter role. If phone numbers are included, you can SMS them their codes directly.
       </div>
     </div>
   </div>

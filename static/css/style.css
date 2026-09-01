@@ -92,7 +92,7 @@
 }
 
 /* ==========================================================================
-   Base & Reset
+   Base & Reset (Optimized for 0ms Touch/Click Latency)
    ========================================================================== */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -105,6 +105,8 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -115,6 +117,50 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Eliminate 300ms mobile click delay & tap highlight across all interactive controls */
+button, a, input, select, textarea, label,
+.btn, .sidebar-link, .candidate-card, .filter-tab, .tab-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Instant click feedback */
+.btn:active, .sidebar-link:active, .candidate-card:active {
+  transform: scale(0.97) !important;
+  transition: transform 0.05s ease !important;
+}
+
+/* Top Page Navigation Progress Loader (Instant Visual Feedback on Clicks) */
+#page-progress-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+  z-index: 99999;
+  transition: width 0.3s ease, opacity 0.3s ease;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.7);
+}
+
+#page-progress-loader.loading {
+  opacity: 1;
+  width: 70%;
+  transition: width 1.2s cubic-bezier(0.1, 0.5, 0.1, 1), opacity 0.2s ease;
+}
+
+#page-progress-loader.complete {
+  width: 100%;
+  opacity: 0;
+  transition: width 0.15s ease, opacity 0.3s ease 0.1s;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -128,7 +174,7 @@ h1, h2, h3, h4, h5, h6 {
 a {
   color: var(--primary-600);
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition: color 0.12s ease;
 }
 a:hover {
   color: var(--primary-700);
@@ -802,36 +848,199 @@ tbody tr:hover {
 }
 
 /* ==========================================================================
-   Grids & Layout Utilities
+   Grids & Layout Utilities (Fluid & Responsive)
    ========================================================================== */
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
 
+/* Large Tablets / Laptops */
 @media (max-width: 1200px) {
   .grid-5 { grid-template-columns: repeat(3, 1fr); }
+  .main-content { padding: 30px 28px; }
 }
 
+/* Medium Tablets (Portrait & Landscape) */
 @media (max-width: 1024px) {
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-5 { grid-template-columns: repeat(2, 1fr); }
   .main-content, .content-only { padding: 24px 20px; }
+  .sidebar { width: 230px; }
 }
 
+/* Mobile & Small Tablets */
 @media (max-width: 768px) {
-  .page-wrapper { flex-direction: column; }
+  .navbar {
+    padding: 0 16px;
+    height: 62px;
+  }
+  .navbar-title {
+    font-size: 1.18rem;
+  }
+  .navbar-right {
+    gap: 8px;
+  }
+  .user-name {
+    display: none;
+  }
+  .navbar-user {
+    padding: 3px 8px 3px 4px;
+  }
+
+  .page-wrapper {
+    flex-direction: column;
+    min-height: calc(100vh - 62px);
+  }
+
+  /* Sleek Horizontal App Navigation Bar on Mobile */
   .sidebar {
     width: 100%;
+    height: auto;
+    position: sticky;
+    top: 62px;
+    z-index: 900;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border-right: none;
     border-bottom: 1px solid var(--slate-200);
-    position: static;
-    height: auto;
-    overflow-y: visible;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
   }
-  .grid-2, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr; }
-  .navbar { padding: 0 16px; }
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  .sidebar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .sidebar-section {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .sidebar-label {
+    display: none;
+  }
+  .sidebar-link {
+    padding: 7px 12px;
+    font-size: 0.82rem;
+    border-radius: var(--radius-full);
+    background: var(--slate-100);
+    border: 1px solid var(--slate-200);
+    flex-shrink: 0;
+    transform: none !important;
+  }
+  .sidebar-link.active {
+    background: var(--primary-600);
+    color: white;
+    border-color: var(--primary-600);
+  }
+  .sidebar-link.active::before {
+    display: none;
+  }
+  .sidebar-link.active svg {
+    stroke: white;
+  }
+  .sidebar > div:first-child {
+    display: none !important;
+  }
+
+  .main-content, .content-only {
+    padding: 20px 14px 60px;
+    max-width: 100%;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .page-header > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+  .page-header .btn {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+  }
+  .page-title {
+    font-size: 1.45rem;
+  }
+  .hero-banner {
+    padding: 24px 20px;
+    border-radius: var(--radius-lg);
+  }
+  .hero-title {
+    font-size: 1.5rem;
+  }
+
+  .grid-2, .grid-3, .grid-4, .grid-5 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .stat-card {
+    padding: 16px;
+  }
+  .stat-value {
+    font-size: 1.55rem;
+  }
+  .stat-icon {
+    width: 42px;
+    height: 42px;
+  }
+  .stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .card-header {
+    padding: 16px 18px;
+  }
+  .card-body {
+    padding: 18px 16px;
+  }
+}
+
+/* Compact Mobile (Phones < 480px) */
+@media (max-width: 480px) {
+  .grid-2, .grid-3, .grid-4, .grid-5 {
+    grid-template-columns: 1fr;
+  }
+  .navbar-right .btn-sm span {
+    display: none;
+  }
+  .navbar-right .btn-sm {
+    padding: 7px 10px;
+  }
+  .turnout-stats-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .candidate-card-item {
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .candidate-card-item > div:nth-child(3) {
+    min-width: 100%;
+    order: 4;
+  }
 }
 
 /* Flex Utilities */

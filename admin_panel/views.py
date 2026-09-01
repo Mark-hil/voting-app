@@ -18,9 +18,10 @@ from .decorators import (
     registrar_required,
     auditor_or_admin_required,
 )
-from .security import admin_rate_limit
 from io import BytesIO, StringIO, TextIOWrapper
 from django.core.management import call_command
+from accounts.sms import send_voter_code_sms, send_bulk_voter_code_sms
+
 
 
 @login_required
@@ -372,6 +373,8 @@ def voter_invite(request):
             email = form.cleaned_data['email'].strip().lower()
             first_name = form.cleaned_data['first_name'].strip()
             last_name = form.cleaned_data['last_name'].strip()
+            phone = form.cleaned_data.get('phone', '').strip()
+            send_sms = form.cleaned_data.get('send_sms', False)
             unique_code = secrets.token_urlsafe(8).upper()
 
             user, created = CustomUser.objects.get_or_create(
@@ -380,6 +383,7 @@ def voter_invite(request):
                     'username': email,
                     'first_name': first_name,
                     'last_name': last_name,
+                    'phone': phone,
                     'role': 'voter',
                     'unique_code': unique_code,
                 }
@@ -387,10 +391,25 @@ def voter_invite(request):
             if created:
                 messages.success(request, f'Voter {email} added successfully! Login code: {user.unique_code}')
             else:
+                updated = False
                 if not user.unique_code:
                     user.unique_code = unique_code
+                    updated = True
+                if phone and not user.phone:
+                    user.phone = phone
+                    updated = True
+                if updated:
                     user.save()
                 messages.warning(request, f'User with email {email} already exists (Login code: {user.unique_code}).')
+
+            # Dispatch SMS if requested and phone number is present
+            if send_sms and user.phone:
+                success, sms_msg = send_voter_code_sms(user)
+                if success:
+                    messages.info(request, f'📱 SMS unique code sent to {user.phone}.')
+                else:
+                    messages.warning(request, f'⚠️ Voter saved, but SMS failed: {sms_msg}')
+
             return redirect('admin_panel:voter_list')
     else:
         form = VoterInviteForm()
@@ -404,60 +423,43 @@ def voter_import(request):
         form = VoterImportForm(request.POST, request.FILES)
         if form.is_valid():
             csv_file = request.FILES['csv_file']
+            send_sms = form.cleaned_data.get('send_sms', False)
             
             try:
                 # Read and decode the file
                 decoded_file = csv_file.read().decode('utf-8')
-                # Create a file-like object from the decoded string
-                from io import StringIO
                 io_string = StringIO(decoded_file)
                 
                 reader = csv.DictReader(io_string)
                 imported_count = 0
                 skipped_count = 0
-                
-                # Debug: Print headers
-                print(f"CSV headers: {reader.fieldnames}")
+                imported_users_with_phone = []
                 
                 for row_num, row in enumerate(reader, 1):
-                    print(f"Processing row {row_num}: {row}")
+                    # Clean up keys for case-insensitive and whitespace-tolerant matching
+                    cleaned_row = {str(k).strip().upper(): str(v).strip() for k, v in row.items() if k is not None}
                     
-                    name = (row.get('name') or row.get("STUDENT'S NAME") or '').strip()
-                    index = (row.get('index') or row.get('INDEX NUMBER') or '').strip()
-                    
-                    print(f"Name: '{name}', Index: '{index}'")
+                    name = (cleaned_row.get("STUDENT'S NAME") or cleaned_row.get('NAME') or cleaned_row.get('FULL NAME') or '').strip()
+                    index = (cleaned_row.get('INDEX NUMBER') or cleaned_row.get('INDEX') or cleaned_row.get('STUDENT ID') or '').strip()
+                    phone = (cleaned_row.get('PHONE') or cleaned_row.get('PHONE NUMBER') or cleaned_row.get('TELEPHONE') or cleaned_row.get('CONTACT') or cleaned_row.get('MOBILE') or '').strip()
                     
                     # Input validation
                     if not name:
-                        print(f"Skipping row {row_num}: no name")
                         skipped_count += 1
                         continue
                     
-                    # Validate name length and characters
                     if len(name) < 2 or len(name) > 100:
-                        print(f"Skipping row {row_num}: invalid name length")
                         skipped_count += 1
                         continue
-                    
-                    # Validate index if provided
-                    if index:
-                        # Accept both numeric and alphanumeric indexes
-                        if len(index) < 1:
-                            print(f"Skipping row {row_num}: invalid index number")
-                            skipped_count += 1
-                            continue
                     
                     # Generate unique code
                     unique_code = secrets.token_urlsafe(8).upper()
-                    print(f"Generated unique code: {unique_code}")
                     
                     # Create username from name and index
                     if index:
-                        # Clean up index for username (remove special characters)
                         clean_index = index.replace('-', '').replace('_', '')
                         username = f"{name.replace(' ', '').lower()}{clean_index}"
                     else:
-                        # If no index, just use name with numbers
                         username = name.replace(' ', '').lower()
                     
                     # Ensure unique username
@@ -467,46 +469,119 @@ def voter_import(request):
                         username = f"{base_username}{counter}"
                         counter += 1
                     
-                    print(f"Username: {username}")
-                    
-                    # Create voter
+                    # Create or update voter
                     try:
                         user, created = CustomUser.objects.get_or_create(
                             username=username,
                             defaults={
                                 'first_name': name.split()[0] if ' ' in name else name,
                                 'last_name': ' '.join(name.split()[1:]) if ' ' in name else '',
+                                'phone': phone,
                                 'role': 'voter',
                                 'unique_code': unique_code,
                             }
                         )
-                        print(f"User created: {created}, User ID: {user.id}")
                         if created:
                             imported_count += 1
+                            if phone:
+                                imported_users_with_phone.append(user)
                         else:
-                            # Update existing user with unique code if they don't have one
+                            updated = False
                             if not user.unique_code:
                                 user.unique_code = unique_code
+                                updated = True
+                            if phone and not user.phone:
+                                user.phone = phone
+                                updated = True
+                            if updated:
                                 user.save()
                                 imported_count += 1
+                                if user.phone:
+                                    imported_users_with_phone.append(user)
                             else:
-                                print(f"User already exists with unique code: {user.unique_code}")
                                 skipped_count += 1
                     except Exception as e:
-                        print(f"Error creating user: {e}")
                         skipped_count += 1
                         continue
                 
-                print(f"Final counts - Imported: {imported_count}, Skipped: {skipped_count}")
                 messages.success(request, f'Successfully imported {imported_count} voters. Skipped {skipped_count}.')
+                
+                # Dispatch bulk SMS if option was checked
+                if send_sms and imported_users_with_phone:
+                    stats = send_bulk_voter_code_sms(imported_users_with_phone)
+                    messages.info(request, f"📱 SMS Broadcast: {stats['sent']} delivered, {stats['skipped']} skipped, {stats['failed']} failed.")
+                
                 return redirect('admin_panel:voter_list')
             except Exception as e:
-                print(f"Error processing CSV: {e}")
                 messages.error(request, f'Error processing CSV file: {e}')
     else:
         form = VoterImportForm()
     
     return render(request, 'admin_panel/voter_import.html', {'form': form})
+
+
+@login_required
+@registrar_required
+def voter_send_sms(request, user_id):
+    """
+    Sends or resends the voter's unique login code via Arkesel SMS.
+    """
+    if request.method != 'POST':
+        return redirect('admin_panel:voter_list')
+
+    voter = get_object_or_404(CustomUser, id=user_id, role='voter')
+    if not voter.phone:
+        messages.error(request, f"Cannot send SMS: No phone number on file for {voter.get_full_name() or voter.username}.")
+        return redirect('admin_panel:voter_list')
+
+    if not voter.unique_code:
+        voter.unique_code = secrets.token_urlsafe(8).upper()
+        voter.save()
+
+    success, msg = send_voter_code_sms(voter)
+    if success:
+        messages.success(request, f"📱 SMS with unique code sent to {voter.get_full_name() or voter.username} ({voter.phone}).")
+    else:
+        messages.error(request, f"❌ Failed to send SMS to {voter.phone}: {msg}")
+
+    return redirect('admin_panel:voter_list')
+
+
+@login_required
+@registrar_required
+def voter_bulk_send_sms(request):
+    """
+    Broadcasts SMS unique codes in bulk to all registered voters or unvoted voters.
+    """
+    if request.method != 'POST':
+        return redirect('admin_panel:voter_list')
+
+    target = request.POST.get('target', 'all')
+    
+    if target == 'unvoted':
+        voted_user_ids = Vote.objects.values_list('voter_id', flat=True).distinct()
+        voters = CustomUser.objects.filter(role='voter').exclude(id__in=voted_user_ids)
+        target_label = "Unvoted Voters (Reminder)"
+    else:
+        voters = CustomUser.objects.filter(role='voter')
+        target_label = "All Registered Voters"
+
+    # Ensure every voter has a unique code before dispatching
+    for v in voters:
+        if not v.unique_code:
+            v.unique_code = secrets.token_urlsafe(8).upper()
+            v.save()
+
+    stats = send_bulk_voter_code_sms(voters)
+    
+    messages.success(
+        request,
+        f"📱 Bulk SMS Broadcast Complete for {target_label}: "
+        f"{stats['sent']} delivered, {stats['skipped']} skipped (no phone number), {stats['failed']} failed."
+    )
+
+    return redirect('admin_panel:voter_list')
+
 
 
 @login_required

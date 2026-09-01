@@ -149,3 +149,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+# Arkesel SMS Gateway Configuration
+ARKESEL_API_KEY = os.environ.get('ARKESEL_API_KEY', '')
+ARKESEL_SENDER_ID = os.environ.get('ARKESEL_SENDER_ID', 'VoteApp')
+SITE_URL = os.environ.get('SITE_URL', 'https://voting-app-wvk6.onrender.com' if not DEBUG else 'http://127.0.0.1:8000')
+

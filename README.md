@@ -21,8 +21,9 @@ A full-featured, secure, auditable, and scalable voting application built with D
   - **Status Filter Tabs**: Filter across **All**, **Active**, **Completed / Archived**, and **Drafts** to keep the workspace uncluttered.
   - **Completed Election Safeguards**: Automatically locks candidate profiles and voting parameters when marked completed to maintain audit integrity.
 - **Voter Registry**:
-  - Single-voter invitation with instant unique login code generation.
-  - **Bulk CSV Import**: Import entire student or member rosters from CSV files.
+  - Single-voter invitation with instant unique login code generation and automated SMS dispatch.
+  - **Bulk CSV Import**: Import entire student or member rosters with telephone numbers from CSV files.
+  - **Arkesel SMS Gateway Integration**: Send individualized unique codes via SMS to voters (single send or bulk broadcast to all/unvoted voters).
   - Quick-copy voter login codes and export code rosters.
   - Invalidate or regenerate single-use voter codes between election cycles.
 
@@ -149,7 +150,11 @@ python manage.py makemigrations accounts
 python manage.py makemigrations elections
 python manage.py migrate
 
-# 4. Seed demo data (creates admin + staff roles + sample voters + sample elections)
+# 4. Seed data (Choose Option A or B):
+# Option A: Seed ONLY administrative & staff roles (clean production setup - zero demo voters/elections)
+python manage.py seed_roles
+
+# Option B: Seed complete demo data (staff roles + sample voters + sample elections)
 python manage.py seed_demo
 
 # 5. Start the development server
@@ -176,7 +181,18 @@ Visit: `http://127.0.0.1:8000`
 
 ## 🛠️ Useful Management Commands
 
-### 1. Post-Election Maintenance & Cleanup
+### 1. Seeding Staff Roles vs Full Demo Data
+```bash
+# Seed ONLY the 4 staff roles (Admin, Commissioner, Registrar, Auditor) with NO demo voters or elections:
+python manage.py seed_roles
+# Or equivalently:
+python manage.py seed_demo --roles-only
+
+# Seed full demo environment (Staff roles + 4 demo voters + 2 sample elections):
+python manage.py seed_demo
+```
+
+### 2. Post-Election Maintenance & Cleanup
 ```bash
 # Preview actions without making changes
 python manage.py post_election_cleanup --dry-run --clear-sessions --reset-voter-codes
@@ -195,11 +211,6 @@ python manage.py post_election_cleanup --clear-sessions
 
 # Total system wipe (creates backup first, deletes votes, candidates, elections, non-admin voters)
 python manage.py post_election_cleanup --wipe-all --backup
-```
-
-### 2. Seeding Demo Data
-```bash
-python manage.py seed_demo
 ```
 
 ### 3. Running Automated Tests
@@ -238,6 +249,7 @@ voteapp/
 │   ├── views.py               # Voter dashboard, ballot, results
 │   ├── management/
 │   │   └── commands/
+│   │       ├── seed_roles.py
 │   │       ├── seed_demo.py
 │   │       └── post_election_cleanup.py
 │   └── tests.py
@@ -261,6 +273,7 @@ voteapp/
 
 1. **Environment Variables**: Set `SECRET_KEY`, `DEBUG=False`, and `ALLOWED_HOSTS`.
 2. **Database**: Use PostgreSQL in production (e.g. Supabase, Render PostgreSQL, AWS RDS).
-3. **Media Storage**: Set up Cloudinary credentials (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`) as detailed in [setup_cloudinary.md](setup_cloudinary.md).
-4. **Static Files**: Run `python manage.py collectstatic --noinput` (WhiteNoise is pre-configured).
-5. **Periodic Maintenance**: Schedule `python manage.py clearsessions` via cron or Render background worker.
+3. **SMS Gateway (Arkesel)**: Provide `ARKESEL_API_KEY`, `ARKESEL_SENDER_ID` (registered sender name with Arkesel), and `SITE_URL` in your environment or Render dashboard. When empty, the app operates in safe mock/simulation mode without incurring SMS charges.
+4. **Media Storage**: Set up Cloudinary credentials (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`) as detailed in [setup_cloudinary.md](setup_cloudinary.md).
+5. **Static Files**: Run `python manage.py collectstatic --noinput` (WhiteNoise is pre-configured).
+6. **Periodic Maintenance**: Schedule `python manage.py clearsessions` via cron or Render background worker.

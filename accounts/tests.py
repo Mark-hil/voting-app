@@ -145,3 +145,39 @@ class RegisterFormTests(TestCase):
         self.assertEqual(user.role, 'voter')
         self.assertTrue(bool(user.unique_code))
         self.assertTrue(user.check_password('StrongPass123!@#'))
+
+
+class SmsDeliveryTests(TestCase):
+    def test_phone_number_normalization(self):
+        from accounts.sms import normalize_phone_number
+        self.assertEqual(normalize_phone_number('0241234567'), '233241234567')
+        self.assertEqual(normalize_phone_number('+233241234567'), '233241234567')
+        self.assertEqual(normalize_phone_number('233241234567'), '233241234567')
+        self.assertEqual(normalize_phone_number('050-123-4567'), '233501234567')
+        self.assertEqual(normalize_phone_number('+1 (415) 555-2671'), '14155552671')
+        self.assertEqual(normalize_phone_number(''), '')
+
+    def test_send_voter_code_sms_mock(self):
+        from accounts.sms import send_voter_code_sms
+        user = CustomUser.objects.create_user(
+            username='smstest',
+            email='sms@test.com',
+            phone='0241234567',
+            unique_code='SMSCODE1',
+            role='voter'
+        )
+        success, msg = send_voter_code_sms(user)
+        self.assertTrue(success)
+
+    def test_send_bulk_voter_code_sms_mock(self):
+        from accounts.sms import send_bulk_voter_code_sms
+        u1 = CustomUser.objects.create_user(username='sms1', email='sms1@test.com', phone='0241111111', unique_code='CODE1', role='voter')
+        u2 = CustomUser.objects.create_user(username='sms2', email='sms2@test.com', phone='0242222222', unique_code='CODE2', role='voter')
+        u3 = CustomUser.objects.create_user(username='sms3', email='sms3@test.com', phone='', unique_code='CODE3', role='voter')
+
+        stats = send_bulk_voter_code_sms([u1, u2, u3])
+        self.assertEqual(stats['total'], 3)
+        self.assertEqual(stats['sent'], 2)
+        self.assertEqual(stats['skipped'], 1)
+        self.assertEqual(stats['failed'], 0)
+

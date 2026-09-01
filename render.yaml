@@ -5,7 +5,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput --clear
-    startCommand: python manage.py migrate && gunicorn voteapp.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: python manage.py migrate && gunicorn voteapp.wsgi:application --workers 4 --threads 4 --worker-class gthread --worker-connections 1000 --timeout 60 --bind 0.0.0.0:$PORT
     healthCheckPath: /accounts/login/
     envVars:
       - key: DATABASE_URL
@@ -23,3 +23,8 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      # Arkesel SMS Gateway Configuration
+      - key: ARKESEL_API_KEY
+        sync: false
+      - key: ARKESEL_SENDER_ID
+        value: VoteApp
