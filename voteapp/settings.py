@@ -86,11 +86,11 @@ USE_TZ = True
 
 # Static files handling
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = '/'
-MEDIA_ROOT = BASE_DIR
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Cloudinary Configuration for Media Storage
 CLOUDINARY_STORAGE = {
@@ -100,14 +100,15 @@ CLOUDINARY_STORAGE = {
     'PREFIX': '',  # Ensures images are saved directly in voter_candidate/ without 'media/' prefix
 }
 
-# Use Cloudinary storage if credentials are provided or in production
-if os.environ.get('CLOUDINARY_CLOUD_NAME') or os.environ.get('CLOUDINARY_URL') or (not DEBUG and not os.environ.get('USE_LOCAL_STORAGE')):
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
-if not DEBUG:
-    # Whitenoise for static files in production
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-    WHITENOISE_MANIFEST_STRICT = False
+# Storage backends configuration (Django 4.2+)
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage" if (os.environ.get('CLOUDINARY_CLOUD_NAME') or os.environ.get('CLOUDINARY_URL') or (not DEBUG and not os.environ.get('USE_LOCAL_STORAGE'))) else "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'

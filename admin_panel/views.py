@@ -11,7 +11,13 @@ from django.core.exceptions import ValidationError
 from elections.models import Election, Candidate, Vote
 from accounts.models import CustomUser
 from .forms import ElectionForm, CandidateForm, VoterInviteForm, VoterImportForm
-from .decorators import admin_required
+from .decorators import (
+    admin_required,
+    system_admin_required,
+    election_officer_required,
+    registrar_required,
+    auditor_or_admin_required,
+)
 from .security import admin_rate_limit
 from io import BytesIO, StringIO, TextIOWrapper
 from django.core.management import call_command
@@ -20,7 +26,14 @@ from django.core.management import call_command
 @login_required
 @admin_required
 def dashboard(request):
+    if request.user.role == 'registrar':
+        return redirect('admin_panel:voter_list')
+
     total_voters = CustomUser.objects.filter(role='voter').count()
+    voters_participated = Vote.objects.values('voter').distinct().count()
+    voters_uncast = max(0, total_voters - voters_participated)
+    turnout_percentage = round((voters_participated / total_voters * 100), 1) if total_voters > 0 else 0.0
+    uncast_percentage = round((voters_uncast / total_voters * 100), 1) if total_voters > 0 else 0.0
     total_elections = Election.objects.count()
     active_elections = Election.objects.filter(status='active').count()
     total_votes = Vote.objects.count()
@@ -30,6 +43,10 @@ def dashboard(request):
 
     context = {
         'total_voters': total_voters,
+        'voters_participated': voters_participated,
+        'voters_uncast': voters_uncast,
+        'turnout_percentage': turnout_percentage,
+        'uncast_percentage': uncast_percentage,
         'total_elections': total_elections,
         'active_elections': active_elections,
         'total_votes': total_votes,
@@ -40,7 +57,7 @@ def dashboard(request):
 
 
 @login_required
-@admin_required
+@auditor_or_admin_required
 def comprehensive_dashboard(request):
     # Enhanced election statistics
     all_elections = Election.objects.all().prefetch_related('candidates', 'votes')
@@ -63,12 +80,18 @@ def comprehensive_dashboard(request):
             'election': election,
             'candidates': candidates_data,
             'total_votes': election.total_votes,
+            'uncast_votes': election.uncast_votes,
+            'uncast_rate': election.uncast_rate,
             'participation_rate': election.participation_rate,
             'total_eligible': election.total_eligible,
         })
 
     # Overall statistics
     total_voters = CustomUser.objects.filter(role='voter').count()
+    voters_participated = Vote.objects.values('voter').distinct().count()
+    voters_uncast = max(0, total_voters - voters_participated)
+    turnout_percentage = round((voters_participated / total_voters * 100), 1) if total_voters > 0 else 0.0
+    uncast_percentage = round((voters_uncast / total_voters * 100), 1) if total_voters > 0 else 0.0
     total_elections = Election.objects.count()
     active_elections = Election.objects.filter(status='active').count()
     total_votes = Vote.objects.count()
@@ -76,6 +99,10 @@ def comprehensive_dashboard(request):
     context = {
         'election_stats': election_stats,
         'total_voters': total_voters,
+        'voters_participated': voters_participated,
+        'voters_uncast': voters_uncast,
+        'turnout_percentage': turnout_percentage,
+        'uncast_percentage': uncast_percentage,
         'total_elections': total_elections,
         'active_elections': active_elections,
         'total_votes': total_votes,
@@ -111,7 +138,7 @@ def election_list(request):
 
 
 @login_required
-@admin_required
+@election_officer_required
 def election_create(request):
     if request.method == 'POST':
         form = ElectionForm(request.POST)
@@ -134,7 +161,7 @@ def election_create(request):
 
 
 @login_required
-@admin_required
+@election_officer_required
 def election_manage(request, election_id):
     election = get_object_or_404(Election, id=election_id)
     candidates = election.candidates.all()
@@ -188,7 +215,7 @@ def election_manage(request, election_id):
 
 
 @login_required
-@admin_required
+@election_officer_required
 def extend_voting_time(request, election_id):
     election = get_object_or_404(Election, id=election_id)
     
@@ -245,7 +272,7 @@ def extend_voting_time(request, election_id):
 
 
 @login_required
-@admin_required
+@auditor_or_admin_required
 def election_results(request, election_id):
     election = get_object_or_404(Election, id=election_id)
     candidates = election.candidates.all()
@@ -273,6 +300,8 @@ def election_results(request, election_id):
         'election': election,
         'results_data': results_data,
         'total_votes': total_votes,
+        'uncast_votes': election.uncast_votes,
+        'uncast_rate': election.uncast_rate,
     })
 
 
@@ -335,7 +364,7 @@ def voter_list(request):
 
 
 @login_required
-@admin_required
+@registrar_required
 def voter_invite(request):
     if request.method == 'POST':
         form = VoterInviteForm(request.POST)
@@ -369,7 +398,7 @@ def voter_invite(request):
 
 
 @login_required
-@admin_required
+@registrar_required
 def voter_import(request):
     if request.method == 'POST':
         form = VoterImportForm(request.POST, request.FILES)
@@ -481,7 +510,7 @@ def voter_import(request):
 
 
 @login_required
-@admin_required
+@auditor_or_admin_required
 def export_election_audit_pack(request, election_id):
     """
     Generates a full audit & archive package as a downloadable ZIP.
@@ -567,7 +596,7 @@ def export_election_audit_pack(request, election_id):
 
 
 @login_required
-@admin_required
+@registrar_required
 def reset_voter_codes(request):
     """
     Clears or regenerates unique login codes for voters between election cycles.
@@ -598,7 +627,7 @@ def reset_voter_codes(request):
 
 
 @login_required
-@admin_required
+@system_admin_required
 def system_maintenance(request):
     """
     Admin system maintenance and clean-up control center:
@@ -676,4 +705,74 @@ def system_maintenance(request):
         'elections': Election.objects.all().order_by('-created_at')[:10],
     }
     return render(request, 'admin_panel/system_maintenance.html', context)
+
+
+@login_required
+@system_admin_required
+def staff_list(request):
+    """
+    Allows System Administrators to view, invite, and assign roles to staff accounts
+    (System Administrator, Electoral Commissioner, Voter Registrar, Election Auditor).
+    """
+    staff_users = CustomUser.objects.exclude(role='voter').order_by('role', 'username')
+    voters = CustomUser.objects.filter(role='voter').order_by('username')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_role':
+            user_id = request.POST.get('user_id')
+            new_role = request.POST.get('role')
+            target_user = get_object_or_404(CustomUser, id=user_id)
+            
+            # Prevent demoting own administrator account if it's the current user
+            if target_user == request.user and new_role != 'admin':
+                messages.error(request, 'You cannot demote your own System Administrator account.')
+                return redirect('admin_panel:staff_list')
+                
+            if new_role in dict(CustomUser.ROLE_CHOICES):
+                target_user.role = new_role
+                target_user.is_staff = (new_role != 'voter')
+                target_user.save()
+                messages.success(request, f'Updated role for {target_user.get_full_name() or target_user.username} to {target_user.get_role_display()}.')
+            else:
+                messages.error(request, 'Invalid role selected.')
+            return redirect('admin_panel:staff_list')
+            
+        elif action == 'add_staff':
+            email = request.POST.get('email', '').strip().lower()
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            role = request.POST.get('role', 'officer')
+            password = request.POST.get('password', '').strip()
+            
+            if not email or not password:
+                messages.error(request, 'Email and password are required to create a staff user.')
+                return redirect('admin_panel:staff_list')
+                
+            if CustomUser.objects.filter(email__iexact=email).exists() or CustomUser.objects.filter(username__iexact=email).exists():
+                messages.error(request, f'An account with email/username "{email}" already exists.')
+                return redirect('admin_panel:staff_list')
+                
+            user = CustomUser.objects.create_user(
+                username=email,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                role=role,
+                is_staff=(role != 'voter')
+            )
+            user.set_password(password)
+            user.save()
+            messages.success(request, f'Staff member "{user.get_full_name() or email}" created as {user.get_role_display()}!')
+            return redirect('admin_panel:staff_list')
+            
+    context = {
+        'staff_users': staff_users,
+        'voters': voters[:50],  # sample voters for role promotion
+        'total_staff': staff_users.count(),
+        'role_choices': CustomUser.ROLE_CHOICES,
+    }
+    return render(request, 'admin_panel/staff_list.html', context)
+
 

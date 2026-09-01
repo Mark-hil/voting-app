@@ -61,6 +61,20 @@ class Election(models.Model):
             return 0
         return round((self.total_votes / total) * 100, 1)
 
+    @property
+    def uncast_votes(self):
+        """Returns the number of eligible voters who have not yet voted in this election."""
+        total = self.total_eligible
+        return max(0, total - self.total_votes)
+
+    @property
+    def uncast_rate(self):
+        """Returns the percentage of uncast ballots in this election."""
+        total = self.total_eligible
+        if total == 0:
+            return 0
+        return round((self.uncast_votes / total) * 100, 1)
+
 
 class Candidate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

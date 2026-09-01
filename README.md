@@ -86,7 +86,12 @@ graph TD
 - **CLI Maintenance Utility (`python manage.py post_election_cleanup`)**: Command-line automation for archiving, backups, session purging, and data wipes with dry-run support.
 
 ### 🔒 Security & Performance
-- **Role-Based Access Control**: Strict segregation between Voter and Admin permissions.
+- **Role-Based Access Control (RBAC)**: Fine-grained separation of duties between 5 distinct roles:
+  - **System Administrator** (`admin`): Infrastructure, backups, database wipes, and staff role delegation.
+  - **Electoral Commissioner** (`officer`): Election creation, candidate rosters & bios, deadline extensions, and results certification.
+  - **Voter Registrar** (`registrar`): Roster management, CSV roster imports, single invites, and code rotation.
+  - **Election Auditor** (`auditor`): Independent oversight, live turnout stats, and audit package ZIP export.
+  - **Voter** (`voter`): Secure ballot casting, double-vote prevention, and receipt tracking.
 - **Ballot Secrecy & Verification**: Voters receive receipt IDs for verification while preserving the secrecy of their vote.
 - **Session & Rate Limit Protection**: Built-in rate limiting on administrative actions and automatic session management.
 - **Cloudinary CDN Integration**: Persistent candidate photos across cloud deployments (Render, Heroku, Railway).
@@ -95,29 +100,30 @@ graph TD
 
 ## 🗺️ Application Routes & Page Index
 
-| Area | Page | URL | Description |
-|---|---|---|---|
-| **Authentication** | Login | `/accounts/login/` | Password or unique voter code login |
-| | Register | `/accounts/register/` | Self-registration (when enabled) |
-| | Logout Confirm | `/accounts/logout/` | Clean session termination |
-| **Voter Portal** | Voter Dashboard | `/elections/dashboard/` | Overview of ballots & participation |
-| | Cast Ballot | `/elections/<id>/ballot/` | Interactive voting ballot |
-| | Vote Confirmation | `/elections/confirmation/<id>/` | Receipt with Reference ID |
-| | Public Results | `/elections/<id>/results/` | Certified candidate vote results |
-| **Admin Panel** | Admin Dashboard | `/admin-panel/` | Quick overview & recent activity |
-| | Full Analytics | `/admin-panel/comprehensive/` | Complete election & candidate metrics |
-| | Elections Roster | `/admin-panel/elections/` | Filterable election list (Active, Archived, Drafts) |
-| | Create Election | `/admin-panel/elections/create/` | New election configuration |
-| | Manage Election | `/admin-panel/elections/<id>/manage/` | Candidates, settings & audit banner |
-| | Extend Voting | `/admin-panel/elections/<id>/extend/` | Add hours/days to voting window |
-| | Live / Certified Results | `/admin-panel/elections/<id>/results/` | Admin live tally & CSV exporter |
-| | Election Audit Pack | `/admin-panel/elections/<id>/audit-pack/` | Download complete audit ZIP |
-| | Voter Registry | `/admin-panel/voters/` | Registered voters with search & filter |
-| | Invite Voter | `/admin-panel/voters/invite/` | Individual voter invitation |
-| | CSV Import | `/admin-panel/voters/import/` | Bulk voter import from CSV |
-| | Reset Voter Codes | `/admin-panel/voters/reset-codes/` | Invalidate/regenerate login codes |
-| | Maintenance & Reset | `/admin-panel/maintenance/` | Backup, session purge & clean slate wipe |
-| **Django Core** | Django Admin | `/django-admin/` | Low-level Django ORM administration |
+| Area | Page | URL | Permitted Roles | Description |
+|---|---|---|---|---|
+| **Authentication** | Login | `/accounts/login/` | All / Public | Password or unique voter code login |
+| | Register | `/accounts/register/` | Public | Self-registration (when enabled) |
+| | Logout Confirm | `/accounts/logout/` | Authenticated | Clean session termination |
+| **Voter Portal** | Voter Dashboard | `/elections/dashboard/` | Voters & Staff | Overview of ballots & participation |
+| | Cast Ballot | `/elections/<id>/ballot/` | Eligible Voters | Interactive voting ballot |
+| | Vote Confirmation | `/elections/confirmation/<id>/` | Voters | Receipt with Reference ID |
+| | Public Results | `/elections/<id>/results/` | All / Public | Certified candidate vote results |
+| **Admin Panel** | Admin Dashboard | `/admin-panel/` | Admin, Officer, Registrar, Auditor | Quick overview & recent activity |
+| | Full Analytics | `/admin-panel/comprehensive/` | Admin, Officer, Registrar, Auditor | Complete election & candidate metrics |
+| | Elections Roster | `/admin-panel/elections/` | Admin, Officer, Registrar, Auditor | Filterable election list (Active, Archived, Drafts) |
+| | Create Election | `/admin-panel/elections/create/` | Admin, Officer | New election configuration |
+| | Manage Election | `/admin-panel/elections/<id>/manage/` | Admin, Officer | Candidates, settings & audit banner |
+| | Extend Voting | `/admin-panel/elections/<id>/extend/` | Admin, Officer | Add hours/days to voting window |
+| | Live / Certified Results | `/admin-panel/elections/<id>/results/` | Admin, Officer, Auditor | Admin live tally & CSV exporter |
+| | Election Audit Pack | `/admin-panel/elections/<id>/audit-pack/` | Admin, Officer, Auditor | Download complete audit ZIP |
+| | Voter Registry | `/admin-panel/voters/` | Admin, Officer, Registrar, Auditor | Registered voters with search & filter |
+| | Invite Voter | `/admin-panel/voters/invite/` | Admin, Registrar | Individual voter invitation |
+| | CSV Import | `/admin-panel/voters/import/` | Admin, Registrar | Bulk voter import from CSV |
+| | Reset Voter Codes | `/admin-panel/voters/reset-codes/` | Admin, Registrar | Invalidate/regenerate login codes |
+| | Staff & Roles | `/admin-panel/staff/` | System Admin | Assign and manage staff accounts & roles |
+| | Maintenance & Reset | `/admin-panel/maintenance/` | System Admin | Backup, session purge & clean slate wipe |
+| **Django Core** | Django Admin | `/django-admin/` | Superusers | Low-level Django ORM administration |
 
 ---
 
@@ -143,7 +149,7 @@ python manage.py makemigrations accounts
 python manage.py makemigrations elections
 python manage.py migrate
 
-# 4. Seed demo data (creates admin + sample voters + sample elections)
+# 4. Seed demo data (creates admin + staff roles + sample voters + sample elections)
 python manage.py seed_demo
 
 # 5. Start the development server
@@ -155,12 +161,16 @@ Visit: `http://127.0.0.1:8000`
 
 ## 🔑 Demo Accounts
 
-| Role | Username / Email | Password | Voter Login Code |
-|---|---|---|---|
-| **Admin** | `admin@voteapp.com` | `admin123` | N/A (Superuser) |
-| **Voter** | `alice@example.com` | `voter123` | `ALICE123` |
-| **Voter** | `bob@example.com` | `voter123` | `BOB12345` |
-| **Voter** | `carol@example.com` | `voter123` | `CAROL123` |
+| Role | Username / Email | Password | Voter Login Code | Scope & Capabilities |
+|---|---|---|---|---|
+| **System Administrator** | `admin@voteapp.com` | `admin123` | N/A | Full Control: Maintenance Hub, Backups, Data Wipes, Staff Roles |
+| **Electoral Commissioner** | `commissioner@voteapp.com` | `officer123` | N/A | Elections & Candidate Bios, Deadlines, Results Certification |
+| **Voter Registrar** | `registrar@voteapp.com` | `registrar123` | N/A | Voter Registry, CSV Roster Imports, Single Invites, Code Resets |
+| **Election Auditor** | `auditor@voteapp.com` | `auditor123` | N/A | Read-Only Oversight, Live Turnout Metrics, Audit ZIP Downloads |
+| **Voter** | `alice@example.com` | `voter123` | `ALICE123` | Voter Portal, Ballot Casting, Reference Receipt Tracking |
+| **Voter** | `bob@example.com` | `voter123` | `BOB12345` | Voter Portal, Ballot Casting, Reference Receipt Tracking |
+| **Voter** | `carol@example.com` | `voter123` | `CAROL123` | Voter Portal, Ballot Casting, Reference Receipt Tracking |
+
 
 ---
 

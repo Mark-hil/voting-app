@@ -19,23 +19,33 @@
 </div>
 
 <!-- Metrics Overview -->
-<div class="grid-3 mb-6" style="max-width:840px;">
+<div class="grid-4 mb-6" style="max-width:960px;">
   <div class="stat-card">
     <div>
-      <div class="stat-value">{{ total_votes }}</div>
-      <div class="stat-label">Total Votes</div>
+      <div class="stat-value" style="color:var(--emerald-600);">{{ total_votes }}</div>
+      <div class="stat-label">Ballots Cast</div>
     </div>
-    <div class="stat-icon" style="background:var(--primary-50);color:var(--primary-600);">
+    <div class="stat-icon" style="background:var(--emerald-50);color:var(--emerald-600);">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
     </div>
   </div>
 
   <div class="stat-card">
     <div>
-      <div class="stat-value">{{ election.total_eligible }}</div>
-      <div class="stat-label">Total Registered</div>
+      <div class="stat-value" style="color:var(--amber-600);">{{ uncast_votes }}</div>
+      <div class="stat-label">Uncast Ballots ({{ uncast_rate }}%)</div>
     </div>
-    <div class="stat-icon" style="background:var(--emerald-50);color:var(--emerald-600);">
+    <div class="stat-icon" style="background:var(--amber-50);color:var(--amber-600);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ election.total_eligible }}</div>
+      <div class="stat-label">Eligible Registered</div>
+    </div>
+    <div class="stat-icon" style="background:var(--primary-50);color:var(--primary-600);">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
     </div>
   </div>
@@ -45,41 +55,48 @@
       <div class="stat-value" style="color:var(--primary-600);">{{ election.participation_rate }}%</div>
       <div class="stat-label">Turnout Rate</div>
     </div>
-    <div class="stat-icon" style="background:var(--amber-50);color:var(--amber-600);">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+    <div class="stat-icon" style="background:rgba(99,102,241,0.1);color:var(--primary-600);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
     </div>
   </div>
 </div>
 
 {% if results_data %}
-<div style="max-width:840px;">
+<div style="max-width:960px;">
   {% for item in results_data %}
-  <div class="card mb-4" style="{% if forloop.first %}border-color:var(--primary-300);background:linear-gradient(to right, var(--primary-50), #FFFFFF);{% endif %}">
+  <div class="card mb-4" style="{% if forloop.first and item.votes > 0 %}border-color:var(--primary-300);background:linear-gradient(to right, rgba(99, 102, 241, 0.04), #FFFFFF);box-shadow:var(--shadow-sm);{% endif %}">
     <div class="card-body">
-      <div class="flex justify-between items-center mb-3">
+      <div class="flex justify-between items-center mb-3 flex-wrap gap-3">
         <div class="flex items-center gap-3">
-          {% if forloop.first %}
-          <div style="font-size:1.6rem;flex-shrink:0;">👑</div>
+          {% if forloop.first and item.votes > 0 %}
+          <div class="candidate-rank-badge candidate-rank-1" style="width:36px;height:36px;font-size:1.1rem;" title="1st Place (Winner / Leader)">👑</div>
           {% else %}
-          <div style="width:34px;height:34px;border-radius:50%;background:var(--slate-100);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--slate-600);font-size:0.85rem;flex-shrink:0;">#{{ forloop.counter }}</div>
+          <div class="candidate-rank-badge candidate-rank-other" style="width:36px;height:36px;font-size:0.85rem;" title="Rank #{{ forloop.counter }}">#{{ forloop.counter }}</div>
           {% endif %}
-          {% if item.candidate.photo %}
-          <img src="{{ item.candidate.photo.url }}" alt="{{ item.candidate.name }}" style="width:48px;height:48px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--slate-200);box-shadow:var(--shadow-xs);flex-shrink:0;">
+
+          {% if item.candidate.photo and item.candidate.photo.url %}
+          <img src="{{ item.candidate.photo.url }}" alt="{{ item.candidate.name }}" class="candidate-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="candidate-avatar-placeholder" style="display:none;">{{ item.candidate.name|first|upper }}</div>
           {% else %}
-          <div style="width:48px;height:48px;border-radius:var(--radius);background:var(--primary-100);color:var(--primary-700);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0;">{{ item.candidate.name|first|upper }}</div>
+          <div class="candidate-avatar-placeholder">{{ item.candidate.name|first|upper }}</div>
           {% endif %}
+
           <div>
             <div class="font-bold text-lg" style="color:var(--slate-900);">{{ item.candidate.name }}</div>
-            {% if item.candidate.bio %}<div class="text-xs text-gray">{{ item.candidate.bio|truncatechars:70 }}</div>{% endif %}
+            {% if item.candidate.bio %}<div class="text-xs text-gray" style="margin-top:2px;">{{ item.candidate.bio|truncatechars:70 }}</div>{% endif %}
           </div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-family:var(--font-heading);font-size:1.5rem;font-weight:800;color:var(--slate-900);">{{ item.votes }} <span style="font-size:0.8rem;font-weight:500;color:var(--slate-400);">votes</span></div>
-          <div style="font-size:0.85rem;font-weight:700;color:var(--primary-600);">{{ item.percentage }}%</div>
+
+        <div style="text-align:right;background:var(--slate-50);padding:8px 14px;border-radius:8px;border:1px solid var(--slate-200);">
+          <div style="font-family:var(--font-heading);font-size:1.35rem;font-weight:800;color:var(--slate-900);line-height:1;">
+            {{ item.votes }} <span style="font-size:0.75rem;font-weight:600;color:var(--slate-500);">{% if item.votes == 1 %}vote{% else %}votes{% endif %}</span>
+          </div>
+          <div style="font-size:0.85rem;font-weight:800;color:var(--primary-600);margin-top:2px;">{{ item.percentage }}%</div>
         </div>
       </div>
-      <div class="progress-bar" style="height:10px;">
-        <div class="progress-fill" style="width:{{ item.percentage }}%;background:{% if forloop.first %}var(--primary-gradient){% else %}var(--slate-400){% endif %};height:10px;"></div>
+
+      <div class="progress-track" style="height:10px;background:var(--slate-200);border-radius:9999px;overflow:hidden;">
+        <div class="progress-fill" style="width:{{ item.percentage }}%;background:{% if forloop.first and item.votes > 0 %}linear-gradient(90deg, #6366f1, #8b5cf6){% else %}linear-gradient(90deg, #94a3b8, #64748b){% endif %};height:10px;border-radius:9999px;transition:width 0.8s ease;"></div>
       </div>
     </div>
   </div>

@@ -51,18 +51,12 @@ class LoginForm(forms.Form):
             # Check matching user with credentials
             authenticated_user = None
             for user in users:
-                if user.is_admin_user():
-                    if user.check_password(unique_code):
-                        authenticated_user = user
-                        break
-                else:
-                    # Voter: match unique code or password
-                    if user.unique_code and user.unique_code.upper() == unique_code.upper():
-                        authenticated_user = user
-                        break
-                    elif user.check_password(unique_code):
-                        authenticated_user = user
-                        break
+                if user.check_password(unique_code):
+                    authenticated_user = user
+                    break
+                elif user.unique_code and user.unique_code.upper() == unique_code.upper():
+                    authenticated_user = user
+                    break
 
             if authenticated_user:
                 self.user = authenticated_user

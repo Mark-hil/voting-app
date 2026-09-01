@@ -15,6 +15,12 @@ class AccountsModelTests(TestCase):
         )
         self.assertEqual(user.role, 'voter')
         self.assertFalse(user.is_admin_user())
+        self.assertFalse(user.is_system_admin())
+        self.assertFalse(user.can_manage_elections())
+        self.assertFalse(user.can_manage_voters())
+        self.assertFalse(user.can_view_analytics())
+        self.assertFalse(user.can_access_maintenance())
+        self.assertEqual(user.get_role_badge_class(), 'voter')
         self.assertEqual(user.unique_code, 'VOTER001')
 
     def test_admin_user(self):
@@ -25,6 +31,61 @@ class AccountsModelTests(TestCase):
             role='admin'
         )
         self.assertTrue(admin.is_admin_user())
+        self.assertTrue(admin.is_system_admin())
+        self.assertTrue(admin.can_manage_elections())
+        self.assertTrue(admin.can_manage_voters())
+        self.assertTrue(admin.can_view_analytics())
+        self.assertTrue(admin.can_access_maintenance())
+        self.assertEqual(admin.get_role_badge_class(), 'admin')
+
+    def test_electoral_commissioner_user(self):
+        officer = CustomUser.objects.create_user(
+            username='officer@test.com',
+            email='officer@test.com',
+            password='officerpassword',
+            role='officer',
+            is_staff=True
+        )
+        self.assertTrue(officer.is_admin_user())
+        self.assertFalse(officer.is_system_admin())
+        self.assertTrue(officer.can_manage_elections())
+        self.assertFalse(officer.can_manage_voters())
+        self.assertTrue(officer.can_view_analytics())
+        self.assertFalse(officer.can_access_maintenance())
+        self.assertEqual(officer.get_role_badge_class(), 'officer')
+
+    def test_voter_registrar_user(self):
+        registrar = CustomUser.objects.create_user(
+            username='registrar@test.com',
+            email='registrar@test.com',
+            password='registrarpassword',
+            role='registrar',
+            is_staff=True
+        )
+        self.assertTrue(registrar.is_admin_user())
+        self.assertFalse(registrar.is_system_admin())
+        self.assertFalse(registrar.can_manage_elections())
+        self.assertTrue(registrar.can_manage_voters())
+        self.assertFalse(registrar.can_view_analytics())
+        self.assertFalse(registrar.can_access_maintenance())
+        self.assertEqual(registrar.get_role_badge_class(), 'registrar')
+
+    def test_election_auditor_user(self):
+        auditor = CustomUser.objects.create_user(
+            username='auditor@test.com',
+            email='auditor@test.com',
+            password='auditorpassword',
+            role='auditor',
+            is_staff=True
+        )
+        self.assertTrue(auditor.is_admin_user())
+        self.assertFalse(auditor.is_system_admin())
+        self.assertFalse(auditor.can_manage_elections())
+        self.assertFalse(auditor.can_manage_voters())
+        self.assertTrue(auditor.can_view_analytics())
+        self.assertFalse(auditor.can_access_maintenance())
+        self.assertEqual(auditor.get_role_badge_class(), 'auditor')
+
 
 
 class LoginFormTests(TestCase):

@@ -9,24 +9,80 @@ class Command(BaseCommand):
     help = 'Seed demo data: admin, voters, and sample elections'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write('Seeding demo data...')
+        self.stdout.write('Seeding demo data with RBAC roles...')
 
-        # Admin
+        # 1. System Administrator
         if not CustomUser.objects.filter(email='admin@voteapp.com').exists():
             admin = CustomUser.objects.create_superuser(
                 username='admin@voteapp.com',
                 email='admin@voteapp.com',
                 password='admin123',
                 first_name='Admin',
-                last_name='User',
+                last_name='System',
                 role='admin',
             )
-            self.stdout.write(self.style.SUCCESS('✓ Admin: admin@voteapp.com / admin123'))
+            self.stdout.write(self.style.SUCCESS('✓ System Admin: admin@voteapp.com / admin123'))
         else:
             admin = CustomUser.objects.get(email='admin@voteapp.com')
+            admin.role = 'admin'
+            admin.save()
             self.stdout.write('  Admin already exists.')
 
-        # Voters
+        # 2. Electoral Commissioner
+        commissioner, created = CustomUser.objects.get_or_create(
+            email='commissioner@voteapp.com',
+            defaults={
+                'username': 'commissioner@voteapp.com',
+                'first_name': 'Electoral',
+                'last_name': 'Commissioner',
+                'role': 'officer',
+                'is_staff': True,
+            }
+        )
+        commissioner.role = 'officer'
+        commissioner.is_staff = True
+        commissioner.set_password('officer123')
+        commissioner.save()
+        if created:
+            self.stdout.write(self.style.SUCCESS('✓ Electoral Commissioner: commissioner@voteapp.com / officer123'))
+
+        # 3. Voter Registrar
+        registrar, created = CustomUser.objects.get_or_create(
+            email='registrar@voteapp.com',
+            defaults={
+                'username': 'registrar@voteapp.com',
+                'first_name': 'Voter',
+                'last_name': 'Registrar',
+                'role': 'registrar',
+                'is_staff': True,
+            }
+        )
+        registrar.role = 'registrar'
+        registrar.is_staff = True
+        registrar.set_password('registrar123')
+        registrar.save()
+        if created:
+            self.stdout.write(self.style.SUCCESS('✓ Voter Registrar: registrar@voteapp.com / registrar123'))
+
+        # 4. Election Auditor
+        auditor, created = CustomUser.objects.get_or_create(
+            email='auditor@voteapp.com',
+            defaults={
+                'username': 'auditor@voteapp.com',
+                'first_name': 'Election',
+                'last_name': 'Auditor',
+                'role': 'auditor',
+                'is_staff': True,
+            }
+        )
+        auditor.role = 'auditor'
+        auditor.is_staff = True
+        auditor.set_password('auditor123')
+        auditor.save()
+        if created:
+            self.stdout.write(self.style.SUCCESS('✓ Election Auditor: auditor@voteapp.com / auditor123'))
+
+        # 5. Voters
         voters = []
         voter_data = [
             ('alice@example.com', 'Alice', 'Johnson', 'ALICE123'),
@@ -64,7 +120,7 @@ class Command(BaseCommand):
                 'voting_type': 'single',
                 'start_date': now - timedelta(hours=2),
                 'end_date': now + timedelta(days=3),
-                'created_by': admin,
+                'created_by': commissioner,
                 'show_results': True,
             }
         )
@@ -85,7 +141,7 @@ class Command(BaseCommand):
                 'voting_type': 'single',
                 'start_date': now + timedelta(days=2),
                 'end_date': now + timedelta(days=7),
-                'created_by': admin,
+                'created_by': commissioner,
                 'show_results': False,
             }
         )
@@ -95,7 +151,11 @@ class Command(BaseCommand):
             Candidate.objects.create(election=election2, name='Pat Morgan', bio='Communication specialist and former board observer.', order=2)
             self.stdout.write(self.style.SUCCESS('✓ Election 2 created (Upcoming — Secretary)'))
 
-        self.stdout.write(self.style.SUCCESS('\n✅ Demo data seeded successfully!'))
-        self.stdout.write('\nLogin credentials:')
-        self.stdout.write('  Admin:  admin@voteapp.com / admin123  → /admin-panel/')
-        self.stdout.write('  Voter:  alice@example.com / voter123  → /elections/dashboard/')
+        self.stdout.write(self.style.SUCCESS('\n✅ Demo data seeded successfully with all roles!'))
+        self.stdout.write('\nRole-Based Login Credentials:')
+        self.stdout.write('  1. System Admin:           admin@voteapp.com        / admin123     → /admin-panel/ (Full Access & Maintenance)')
+        self.stdout.write('  2. Electoral Commissioner: commissioner@voteapp.com / officer123   → /admin-panel/ (Manage Elections & Candidates)')
+        self.stdout.write('  3. Voter Registrar:        registrar@voteapp.com    / registrar123 → /admin-panel/ (Manage Voters & CSVs)')
+        self.stdout.write('  4. Election Auditor:       auditor@voteapp.com      / auditor123   → /admin-panel/ (Read-only Audits & ZIP Packs)')
+        self.stdout.write('  5. Voter:                  alice@example.com        / voter123     → /elections/dashboard/ (Cast Ballot)')
+

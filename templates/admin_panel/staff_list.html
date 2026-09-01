@@ -1,0 +1,202 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block title %}Staff & Roles — VoteApp Admin{% endblock %}
+
+{% block admin_content %}
+<div class="page-header flex justify-between items-center" style="flex-wrap:wrap;gap:12px;">
+  <div>
+    <h1 class="page-title">Staff & Role Management</h1>
+    <p class="page-subtitle">Configure administrative privileges and assign roles for electoral staff and observers.</p>
+  </div>
+  <div class="flex gap-2">
+    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('addStaffModal').style.display='flex'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      + Add Staff Member
+    </button>
+  </div>
+</div>
+
+<!-- Role Summary Grid -->
+<div class="stats-grid mb-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(99, 102, 241, 0.12);color:var(--primary-600);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-label">System Admins</div>
+      <div class="stat-value">{% for u in staff_users %}{% if u.role == 'admin' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}</div>
+      <div class="stat-meta">Full technical & wipe access</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(2, 132, 199, 0.12);color:#0284c7;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-label">Electoral Commissioners</div>
+      <div class="stat-value">{% for u in staff_users %}{% if u.role == 'officer' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}</div>
+      <div class="stat-meta">Manage elections & candidates</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(217, 119, 6, 0.12);color:#d97706;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-label">Voter Registrars</div>
+      <div class="stat-value">{% for u in staff_users %}{% if u.role == 'registrar' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}</div>
+      <div class="stat-meta">Manage roster, CSVs & codes</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(13, 148, 136, 0.12);color:#0d9488;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-label">Election Auditors</div>
+      <div class="stat-value">{% for u in staff_users %}{% if u.role == 'auditor' %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}</div>
+      <div class="stat-meta">Read-only audit & export</div>
+    </div>
+  </div>
+</div>
+
+<!-- Staff Table -->
+<div class="card">
+  <div class="card-header flex justify-between items-center">
+    <span class="card-title">Staff Members & Assigned Roles ({{ staff_users|length }})</span>
+  </div>
+
+  {% if staff_users %}
+  <div class="table-wrapper" style="border:none;border-radius:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>Staff Member</th>
+          <th>Username / Email</th>
+          <th>Current Role</th>
+          <th>Permissions Scope</th>
+          <th>Change Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user_obj in staff_users %}
+        <tr>
+          <td>
+            <div class="flex items-center gap-2">
+              <div class="avatar" style="width:34px;height:34px;font-size:0.85rem;">
+                {{ user_obj.first_name|first|default:user_obj.username|first|upper }}
+              </div>
+              <div>
+                <strong style="color:var(--slate-800);display:block;font-size:0.9rem;">
+                  {{ user_obj.get_full_name|default:user_obj.username }}
+                  {% if user_obj == request.user %}<span style="font-size:0.75rem;color:var(--primary-600);font-weight:normal;">(You)</span>{% endif %}
+                </strong>
+                <span class="text-muted" style="font-size:0.75rem;">Joined {{ user_obj.date_joined|date:"M d, Y" }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <code style="background:var(--slate-100);padding:2px 6px;border-radius:4px;font-size:0.8rem;">{{ user_obj.username }}</code>
+            {% if user_obj.email and user_obj.email != user_obj.username %}
+            <div class="text-muted" style="font-size:0.75rem;">{{ user_obj.email }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="user-role-badge {{ user_obj.get_role_badge_class }}">
+              {{ user_obj.get_role_display }}
+            </span>
+          </td>
+          <td style="font-size:0.8rem;color:var(--slate-600);max-width:240px;">
+            {% if user_obj.role == 'admin' %}
+              <span class="badge badge-primary">Full Control</span> Database wipes, backups, staff, election & voter tools
+            {% elif user_obj.role == 'officer' %}
+              <span class="badge badge-info">Elections & Candidates</span> Create/edit elections, manage candidate bios & photos
+            {% elif user_obj.role == 'registrar' %}
+              <span class="badge badge-warning">Voter Roll</span> Import CSV, send invites, reset/generate login codes
+            {% elif user_obj.role == 'auditor' %}
+              <span class="badge badge-success">Auditing</span> Read-only stats, live vote tallies, download audit ZIP packs
+            {% else %}
+              <span class="badge badge-secondary">Voter</span> Standard ballot casting
+            {% endif %}
+          </td>
+          <td>
+            {% if user_obj == request.user and user_obj.role == 'admin' %}
+              <span class="text-muted" style="font-size:0.8rem;">Self-demotion locked</span>
+            {% else %}
+              <form method="post" action="{% url 'admin_panel:staff_list' %}" style="display:flex;gap:6px;align-items:center;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_role">
+                <input type="hidden" name="user_id" value="{{ user_obj.id }}">
+                <select name="role" class="form-input" style="padding:4px 8px;font-size:0.8rem;height:auto;min-width:140px;">
+                  {% for r_key, r_label in role_choices %}
+                    <option value="{{ r_key }}" {% if user_obj.role == r_key %}selected{% endif %}>{{ r_label }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:0.75rem;">Update</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-center" style="padding:40px;">
+    <p class="text-muted">No additional staff members found.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Staff Modal -->
+<div id="addStaffModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:999;align-items:center;justify-content:center;padding:16px;">
+  <div class="card" style="width:100%;max-width:480px;background:var(--white);box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+    <div class="card-header flex justify-between items-center">
+      <span class="card-title">Add New Staff Member</span>
+      <button type="button" onclick="document.getElementById('addStaffModal').style.display='none'" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--slate-400);line-height:1;">&times;</button>
+    </div>
+    <form method="post" action="{% url 'admin_panel:staff_list' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_staff">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label class="form-label">First Name</label>
+            <input type="text" name="first_name" class="form-input" placeholder="e.g. John" required>
+          </div>
+          <div>
+            <label class="form-label">Last Name</label>
+            <input type="text" name="last_name" class="form-input" placeholder="e.g. Doe" required>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Email / Username</label>
+          <input type="email" name="email" class="form-input" placeholder="officer@voteapp.com" required>
+        </div>
+
+        <div>
+          <label class="form-label">Assigned Role</label>
+          <select name="role" class="form-input" required>
+            <option value="officer">Electoral Commissioner (Manage Elections & Candidates)</option>
+            <option value="registrar">Voter Registrar (Manage Voters & Codes)</option>
+            <option value="auditor">Election Auditor (Read-only Oversight & Export)</option>
+            <option value="admin">System Administrator (Full Access & Maintenance)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">Temporary Password</label>
+          <input type="password" name="password" class="form-input" placeholder="Enter secure password" required minlength="6">
+        </div>
+      </div>
+      <div class="card-footer flex justify-end gap-2" style="border-top:1px solid var(--slate-100);padding:14px 20px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('addStaffModal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Create Staff User</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

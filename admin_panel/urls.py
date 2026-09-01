@@ -16,5 +16,7 @@ urlpatterns = [
     path('voters/invite/', views.voter_invite, name='voter_invite'),
     path('voters/import/', views.voter_import, name='voter_import'),
     path('voters/reset-codes/', views.reset_voter_codes, name='reset_voter_codes'),
+    path('staff/', views.staff_list, name='staff_list'),
     path('maintenance/', views.system_maintenance, name='system_maintenance'),
 ]
+

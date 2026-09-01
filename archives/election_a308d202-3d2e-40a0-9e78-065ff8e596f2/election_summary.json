@@ -1,0 +1,14 @@
+{
+  "election_id": "a308d202-3d2e-40a0-9e78-065ff8e596f2",
+  "title": "Board Election",
+  "position": "Chairman",
+  "status": "completed",
+  "voting_type": "Single Choice",
+  "start_date": "2026-08-31T18:25:00.681196+00:00",
+  "end_date": "2026-09-03T18:25:00.681196+00:00",
+  "total_eligible_voters": 0,
+  "total_votes_cast": 0,
+  "turnout_percentage": "0%",
+  "archived_at": "2026-09-01T18:25:02.032328+00:00",
+  "results": []
+}

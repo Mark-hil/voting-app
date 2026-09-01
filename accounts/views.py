@@ -20,7 +20,9 @@ def login_view(request):
             next_url = request.GET.get('next', '')
             if next_url:
                 return redirect(next_url)
-            if user.is_admin_user():
+            if user.role == 'registrar':
+                return redirect('admin_panel:voter_list')
+            elif user.is_admin_user():
                 return redirect('admin_panel:dashboard')
             return redirect('elections:dashboard')
         else:
