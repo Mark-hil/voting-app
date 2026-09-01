@@ -5,35 +5,21 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput --clear
-    preDeployCommand: python manage.py migrate
     startCommand: python manage.py migrate && gunicorn voteapp.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /accounts/login/
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: voteapp-db
-          property: connectionString
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
         value: false
       - key: ALLOWED_HOSTS
         value: voting-app-wvk6.onrender.com,localhost,127.0.0.1
-      # AWS S3 Configuration for Media Files
-      - key: AWS_ACCESS_KEY_ID
+      # Cloudinary Configuration for Media Files
+      - key: CLOUDINARY_CLOUD_NAME
         sync: false
-      - key: AWS_SECRET_ACCESS_KEY
+      - key: CLOUDINARY_API_KEY
         sync: false
-      - key: AWS_STORAGE_BUCKET_NAME
+      - key: CLOUDINARY_API_SECRET
         sync: false
-      - key: AWS_S3_REGION_NAME
-        value: us-east-1
-
-  # PostgreSQL Database
-  - type: pserv
-    name: voteapp-db
-    env: postgres
-    plan: free
-    user: voteapp_user
-    databaseName: voteapp_db
-    ipAllowList: []
